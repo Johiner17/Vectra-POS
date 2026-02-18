@@ -1,0 +1,39 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import POS from './pages/POS';
+import Inventory from './pages/Inventory';
+import Layout from './components/Layout';
+
+// Mock auth check (replace with real auth)
+const ProtectedRoute = ({ children }) => {
+    const token = localStorage.getItem('token');
+    if (!token) return <Navigate to="/login" replace />;
+    return children;
+};
+
+function App() {
+    return (
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <Toaster position="top-right" />
+            <Routes>
+                <Route path="/login" element={<Login />} />
+
+                <Route path="/" element={
+                    <ProtectedRoute>
+                        <Layout />
+                    </ProtectedRoute>
+                }>
+                    <Route index element={<Navigate to="/dashboard" replace />} />
+                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="pos" element={<POS />} />
+                    <Route path="inventory" element={<Inventory />} />
+                </Route>
+            </Routes>
+        </BrowserRouter>
+    )
+}
+
+export default App;

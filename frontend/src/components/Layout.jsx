@@ -1,0 +1,107 @@
+import React from 'react';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard, ShoppingCart, Package, Users, Settings, LogOut } from 'lucide-react';
+
+const Layout = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+    };
+
+    const navItems = [
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+        { icon: ShoppingCart, label: 'Punto de Venta', path: '/pos' },
+        { icon: Package, label: 'Inventario', path: '/inventory' },
+        { icon: Users, label: 'Clientes', path: '/customers' },
+        { icon: Settings, label: 'Configuración', path: '/settings' },
+    ];
+
+    return (
+        <div style={{ display: 'flex', height: '100vh' }}>
+            {/* Sidebar */}
+            <aside style={{
+                width: '250px',
+                backgroundColor: '#1e293b',
+                color: 'white',
+                display: 'flex',
+                flexDirection: 'column'
+            }}>
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid #334155' }}>
+                    <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Vectra POS</h1>
+                    <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>{user.username}</p>
+                </div>
+
+                <nav style={{ flex: 1, padding: '1rem' }}>
+                    {navItems.map((item) => (
+                        <Link
+                            key={item.path}
+                            to={item.path}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                padding: '0.75rem 1rem',
+                                marginBottom: '0.5rem',
+                                borderRadius: '0.5rem',
+                                color: location.pathname === item.path ? 'white' : '#94a3b8',
+                                backgroundColor: location.pathname === item.path ? '#2563eb' : 'transparent',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <item.icon size={20} style={{ marginRight: '0.75rem' }} />
+                            {item.label}
+                        </Link>
+                    ))}
+                </nav>
+
+                <div style={{ padding: '1rem', borderTop: '1px solid #334155' }}>
+                    <button
+                        onClick={handleLogout}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            color: '#ef4444',
+                            backgroundColor: 'transparent',
+                            borderRadius: '0.5rem'
+                        }}
+                    >
+                        <LogOut size={20} style={{ marginRight: '0.75rem' }} />
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </aside>
+
+            {/* Main Content */}
+            <main style={{ flex: 1, overflow: 'auto', backgroundColor: '#f1f5f9' }}>
+                <header style={{
+                    backgroundColor: 'white',
+                    padding: '1rem 2rem',
+                    borderBottom: '1px solid #e2e8f0',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b' }}>
+                        {navItems.find(i => i.path === location.pathname)?.label || 'Vectra POS'}
+                    </h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                            {new Date().toLocaleDateString()}
+                        </span>
+                    </div>
+                </header>
+                <div style={{ padding: '2rem' }}>
+                    <Outlet />
+                </div>
+            </main>
+        </div>
+    );
+};
+
+export default Layout;
