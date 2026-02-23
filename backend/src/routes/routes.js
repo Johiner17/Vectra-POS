@@ -5,6 +5,7 @@ const ProductController = require('../controllers/ProductController');
 const SaleController = require('../controllers/SaleController');
 const CurrencyController = require('../controllers/CurrencyController');
 const InventoryController = require('../controllers/InventoryController');
+const CajaController = require('../controllers/CajaController');
 const authMiddleware = require('../middleware/authMiddleware');
 const config = require('../config/config');
 
@@ -39,7 +40,13 @@ router.post('/inventory/movement', InventoryController.registerMovement);
 
 // Ventas
 router.post('/sales', SaleController.processSale);
+router.get('/sales', SaleController.getRecent);
 router.get('/sales/:id', SaleController.getById);
+
+// Caja
+router.get('/caja/session', CajaController.getOrOpenSession);
+router.post('/caja/close', CajaController.closeSession);
+router.get('/caja/:apertura_id/summary', CajaController.getSalesSummary);
 
 // Moneda
 router.get('/currency/rate', CurrencyController.getLatestRate);
