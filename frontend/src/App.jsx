@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
+import Sales from './pages/Sales';
+import CurrencyPage from './pages/CurrencyPage';
 import Layout from './components/Layout';
 
 // Mock auth check (replace with real auth)
@@ -30,6 +32,8 @@ function App() {
                     <Route path="dashboard" element={<Dashboard />} />
                     <Route path="pos" element={<POS />} />
                     <Route path="inventory" element={<Inventory />} />
+                    <Route path="sales" element={<Sales />} />
+                    <Route path="currency" element={<CurrencyPage />} />
                 </Route>
             </Routes>
         </BrowserRouter>

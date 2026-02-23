@@ -6,6 +6,7 @@ const SaleController = require('../controllers/SaleController');
 const CurrencyController = require('../controllers/CurrencyController');
 const InventoryController = require('../controllers/InventoryController');
 const CajaController = require('../controllers/CajaController');
+const DashboardController = require('../controllers/DashboardController');
 const authMiddleware = require('../middleware/authMiddleware');
 const config = require('../config/config');
 
@@ -48,9 +49,23 @@ router.get('/caja/session', CajaController.getOrOpenSession);
 router.post('/caja/close', CajaController.closeSession);
 router.get('/caja/:apertura_id/summary', CajaController.getSalesSummary);
 
+// Dashboard
+router.get('/dashboard/stats', DashboardController.getStats);
+
+// Categorias
+router.get('/categories', async (req, res, next) => {
+    try {
+        const dbManager = require('../database/database');
+        const db = await dbManager.getDb();
+        const cats = await db.all('SELECT * FROM categorias WHERE activo = 1 ORDER BY nombre');
+        res.json({ success: true, data: cats });
+    } catch (e) { next(e); }
+});
+
 // Moneda
 router.get('/currency/rate', CurrencyController.getLatestRate);
 router.post('/currency/rate', CurrencyController.registerRate);
+router.post('/currency/sync', CurrencyController.syncNow);
 router.get('/currency/history', CurrencyController.getHistory);
 
 module.exports = router;

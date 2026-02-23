@@ -66,14 +66,31 @@ class SaleController {
     async getRecent(req, res, next) {
         try {
             const db = await dbManager.getDb();
-            const limit = parseInt(req.query.limit) || 20;
-            const sales = await db.all(
-                `SELECT v.*, u.username 
-                 FROM ventas v
-                 LEFT JOIN usuarios u ON v.usuario_id = u.id
-                 ORDER BY v.fecha_venta DESC LIMIT ?`,
-                [limit]
-            );
+            const { limit = 20, offset = 0, fecha_inicio, fecha_fin } = req.query;
+
+            let whereClause = "WHERE v.estado = 'completada'";
+            const params = [];
+
+            if (fecha_inicio) {
+                whereClause += ' AND DATE(v.fecha_venta) >= ?';
+                params.push(fecha_inicio);
+            }
+            if (fecha_fin) {
+                whereClause += ' AND DATE(v.fecha_venta) <= ?';
+                params.push(fecha_fin);
+            }
+
+            params.push(parseInt(limit), parseInt(offset));
+
+            const sales = await db.all(`
+                SELECT v.*, u.username
+                FROM ventas v
+                LEFT JOIN usuarios u ON v.usuario_id = u.id
+                ${whereClause}
+                ORDER BY v.fecha_venta DESC
+                LIMIT ? OFFSET ?
+            `, params);
+
             res.json({ success: true, data: sales });
         } catch (error) {
             next(error);

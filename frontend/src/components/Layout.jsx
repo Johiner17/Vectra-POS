@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, Users, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, ClipboardList, TrendingUp, Settings, LogOut } from 'lucide-react';
 
 const Layout = () => {
     const navigate = useNavigate();
@@ -17,7 +17,8 @@ const Layout = () => {
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
         { icon: ShoppingCart, label: 'Punto de Venta', path: '/pos' },
         { icon: Package, label: 'Inventario', path: '/inventory' },
-        { icon: Users, label: 'Clientes', path: '/customers' },
+        { icon: ClipboardList, label: 'Historial de Ventas', path: '/sales' },
+        { icon: TrendingUp, label: 'Tasa BCV', path: '/currency' },
         { icon: Settings, label: 'Configuración', path: '/settings' },
     ];
 
@@ -88,7 +89,7 @@ const Layout = () => {
                     alignItems: 'center'
                 }}>
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b' }}>
-                        {navItems.find(i => i.path === location.pathname)?.label || 'Vectra POS'}
+                        {navItems.find(i => location.pathname.startsWith(i.path))?.label || 'Vectra POS'}
                     </h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
