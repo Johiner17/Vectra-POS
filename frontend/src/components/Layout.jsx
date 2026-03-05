@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, ClipboardList, TrendingUp, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, ClipboardList, TrendingUp, Settings, LogOut, User } from 'lucide-react';
 
 const Layout = () => {
     const navigate = useNavigate();
@@ -22,6 +22,12 @@ const Layout = () => {
         { icon: Settings, label: 'Configuración', path: '/settings' },
     ];
 
+    const rolLabels = {
+        admin: 'Administrador',
+        cajero: 'Cajero',
+        supervisor: 'Supervisor'
+    };
+
     return (
         <div style={{ display: 'flex', height: '100vh' }}>
             {/* Sidebar */}
@@ -33,8 +39,24 @@ const Layout = () => {
                 flexDirection: 'column'
             }}>
                 <div style={{ padding: '1.5rem', borderBottom: '1px solid #334155' }}>
-                    <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Vectra POS</h1>
-                    <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>{user.username}</p>
+                    <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>Vectra POS</h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        <div style={{
+                            width: '28px', height: '28px', borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                            <User size={14} color="#fff" />
+                        </div>
+                        <div>
+                            <p style={{ fontSize: '0.8125rem', color: '#e2e8f0', margin: 0 }}>
+                                {user.nombre_completo || user.username || 'Usuario'}
+                            </p>
+                            <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: 0 }}>
+                                {rolLabels[user.rol] || user.rol || ''}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <nav style={{ flex: 1, padding: '1rem' }}>
@@ -46,11 +68,12 @@ const Layout = () => {
                                 display: 'flex',
                                 alignItems: 'center',
                                 padding: '0.75rem 1rem',
-                                marginBottom: '0.5rem',
+                                marginBottom: '0.25rem',
                                 borderRadius: '0.5rem',
                                 color: location.pathname === item.path ? 'white' : '#94a3b8',
                                 backgroundColor: location.pathname === item.path ? '#2563eb' : 'transparent',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.2s',
+                                fontSize: '0.875rem'
                             }}
                         >
                             <item.icon size={20} style={{ marginRight: '0.75rem' }} />
@@ -69,7 +92,9 @@ const Layout = () => {
                             padding: '0.75rem 1rem',
                             color: '#ef4444',
                             backgroundColor: 'transparent',
-                            borderRadius: '0.5rem'
+                            borderRadius: '0.5rem',
+                            fontSize: '0.875rem',
+                            transition: 'all 0.2s'
                         }}
                     >
                         <LogOut size={20} style={{ marginRight: '0.75rem' }} />
@@ -88,12 +113,14 @@ const Layout = () => {
                     justifyContent: 'space-between',
                     alignItems: 'center'
                 }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', margin: 0 }}>
                         {navItems.find(i => location.pathname.startsWith(i.path))?.label || 'Vectra POS'}
                     </h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                            {new Date().toLocaleDateString()}
+                            {new Date().toLocaleDateString('es-VE', {
+                                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                            })}
                         </span>
                     </div>
                 </header>

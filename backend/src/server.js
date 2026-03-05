@@ -6,6 +6,7 @@ const dbManager = require('./database/database');
 const routes = require('./routes/routes');
 const errorMiddleware = require('./middleware/errorMiddleware');
 const bcvSyncService = require('./services/BcvSyncService');
+const configService = require('./services/ConfigService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +33,10 @@ async function startServer() {
     try {
         // Inicializar base de datos
         await dbManager.connect();
+
+        // Inicializar configuraciones por defecto si no existen
+        await configService.initializeDefaults();
+        console.log('✅ Configuraciones verificadas/inicializadas');
 
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`\n==================================================`);

@@ -7,9 +7,10 @@ import POS from './pages/POS';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
 import CurrencyPage from './pages/CurrencyPage';
+import Settings from './pages/Settings';
 import Layout from './components/Layout';
 
-// Mock auth check (replace with real auth)
+// Verificación de autenticación real (token en localStorage)
 const ProtectedRoute = ({ children }) => {
     const token = localStorage.getItem('token');
     if (!token) return <Navigate to="/login" replace />;
@@ -34,6 +35,7 @@ function App() {
                     <Route path="inventory" element={<Inventory />} />
                     <Route path="sales" element={<Sales />} />
                     <Route path="currency" element={<CurrencyPage />} />
+                    <Route path="settings" element={<Settings />} />
                 </Route>
             </Routes>
         </BrowserRouter>

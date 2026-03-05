@@ -303,10 +303,8 @@ CREATE TABLE IF NOT EXISTS licencias (
 -- DATOS INICIALES
 -- ============================================
 
--- Usuario administrador por defecto (password: admin123)
--- Hash bcrypt de 'admin123' con 10 rounds
-INSERT OR IGNORE INTO usuarios (id, username, password_hash, nombre_completo, rol, activo) 
-VALUES (1, 'admin', '$2b$10$rKvVPZqGqXqZqZqZqZqZqOXxJ5qZqZqZqZqZqZqZqZqZqZqZqZqZq', 'Administrador', 'admin', 1);
+-- NOTA: El usuario admin se crea en init.js con hash bcrypt real.
+-- No insertar aquí un hash falso.
 
 -- Caja por defecto
 INSERT OR IGNORE INTO cajas (id, nombre, descripcion, activo) 
