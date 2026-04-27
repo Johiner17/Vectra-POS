@@ -10,6 +10,7 @@ const POS = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(false);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
     const [tasaBcv, setTasaBcv] = useState(0);
     const searchRef = useRef(null);
 
@@ -87,7 +88,12 @@ const POS = () => {
     const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id));
 
     const clearCart = () => {
-        if (cart.length > 0 && window.confirm('¿Limpiar carrito?')) setCart([]);
+        if (cart.length > 0) setIsClearConfirmOpen(true);
+    };
+
+    const confirmClearCart = () => {
+        setCart([]);
+        setIsClearConfirmOpen(false);
     };
 
     const calculateSubtotal = () => cart.reduce((acc, item) => {
@@ -311,6 +317,115 @@ const POS = () => {
                 tasaBcv={tasaBcv}
                 onSuccess={handleCheckoutSuccess}
             />
+
+            {/* ── Modal Confirmar Limpiar Carrito ── */}
+            {isClearConfirmOpen && (
+                <div
+                    onClick={() => setIsClearConfirmOpen(false)}
+                    style={{
+                        position: 'fixed', inset: 0,
+                        backgroundColor: 'rgba(15, 23, 42, 0.55)',
+                        backdropFilter: 'blur(4px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 9999,
+                        animation: 'fadeIn 0.18s ease'
+                    }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            backgroundColor: 'white',
+                            borderRadius: '1.25rem',
+                            padding: '2rem',
+                            width: '360px',
+                            maxWidth: '90vw',
+                            boxShadow: '0 25px 60px rgba(0,0,0,0.2)',
+                            animation: 'slideUp 0.22s cubic-bezier(0.34,1.56,0.64,1)'
+                        }}
+                    >
+                        {/* Ícono */}
+                        <div style={{
+                            width: '56px', height: '56px', borderRadius: '50%',
+                            backgroundColor: '#fef2f2',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            margin: '0 auto 1.25rem'
+                        }}>
+                            <Trash2 size={26} color="#ef4444" />
+                        </div>
+
+                        {/* Título */}
+                        <h3 style={{
+                            textAlign: 'center', fontWeight: 700,
+                            fontSize: '1.125rem', color: '#1e293b',
+                            marginBottom: '0.5rem'
+                        }}>
+                            ¿Limpiar carrito?
+                        </h3>
+
+                        {/* Descripción */}
+                        <p style={{
+                            textAlign: 'center', fontSize: '0.875rem',
+                            color: '#64748b', marginBottom: '1.25rem', lineHeight: 1.5
+                        }}>
+                            Se eliminarán{' '}
+                            <strong style={{ color: '#1e293b' }}>
+                                {cart.reduce((a, i) => a + i.quantity, 0)} producto{cart.reduce((a, i) => a + i.quantity, 0) !== 1 ? 's' : ''}
+                            </strong>
+                            {' '}del carrito. Esta acción no se puede deshacer.
+                        </p>
+
+                        {/* Resumen rápido */}
+                        <div style={{
+                            backgroundColor: '#f8fafc', borderRadius: '0.75rem',
+                            padding: '0.75rem 1rem', marginBottom: '1.5rem',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                        }}>
+                            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Total a descartar</span>
+                            <span style={{ fontWeight: 700, fontSize: '1rem', color: '#ef4444' }}>
+                                ${total.toFixed(2)}
+                            </span>
+                        </div>
+
+                        {/* Botones */}
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <button
+                                onClick={() => setIsClearConfirmOpen(false)}
+                                style={{
+                                    flex: 1, padding: '0.75rem',
+                                    backgroundColor: '#f1f5f9', color: '#475569',
+                                    border: 'none', borderRadius: '0.75rem',
+                                    fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
+                                    transition: 'background-color 0.15s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={confirmClearCart}
+                                style={{
+                                    flex: 1, padding: '0.75rem',
+                                    backgroundColor: '#ef4444', color: 'white',
+                                    border: 'none', borderRadius: '0.75rem',
+                                    fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
+                                    transition: 'background-color 0.15s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#dc2626'}
+                                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#ef4444'}
+                            >
+                                Sí, limpiar
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Keyframes inline */}
+                    <style>{`
+                        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+                        @keyframes slideUp { from { opacity: 0; transform: translateY(24px) scale(0.95) } to { opacity: 1; transform: translateY(0) scale(1) } }
+                    `}</style>
+                </div>
+            )}
         </div>
     );
 };

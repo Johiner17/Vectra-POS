@@ -4,7 +4,7 @@ import { X, DollarSign, CreditCard, Banknote, Check, Printer } from 'lucide-reac
 const PAYMENT_METHODS = [
     { id: 'efectivo_usd', label: 'Efectivo USD', moneda: 'USD', icon: DollarSign, color: '#16a34a' },
     { id: 'efectivo_bs', label: 'Efectivo Bs.', moneda: 'BS', icon: Banknote, color: '#ca8a04' },
-    { id: 'punto_venta', label: 'Punto de Venta', moneda: 'USD', icon: CreditCard, color: '#2563eb' },
+    { id: 'punto_venta', label: 'Punto de Venta', moneda: 'BS', icon: CreditCard, color: '#2563eb' },
     { id: 'transferencia_usd', label: 'Transferencia USD', moneda: 'USD', icon: CreditCard, color: '#7c3aed' },
     { id: 'transferencia_bs', label: 'Transferencia Bs.', moneda: 'BS', icon: CreditCard, color: '#db2777' },
 ];
@@ -43,14 +43,30 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
         }
     }, [montoRecibido, selectedMethod, totalUsd, totalBs]);
 
+    // Declaración compartida del método seleccionado
+    const method = PAYMENT_METHODS.find(m => m.id === selectedMethod);
+
+    // Validación: si el campo está vacío se usa el monto exacto.
+    // El botón solo se bloquea si se escribe un valor menor al total requerido.
+    const montoIngresado = parseFloat(montoRecibido);
+    const totalRequerido = method?.moneda === 'BS' ? totalBs : totalUsd;
+    const campoVacio = montoRecibido === '' || montoRecibido === null;
+    const tieneMonto = !campoVacio && !isNaN(montoIngresado);
+    const esPagoInsuficiente = tieneMonto && montoIngresado < totalRequerido;
+    const faltante = tieneMonto ? Math.max(0, totalRequerido - montoIngresado) : 0;
+
     const handleConfirmarPago = async () => {
-        const method = PAYMENT_METHODS.find(m => m.id === selectedMethod);
         if (!method) return;
+
+        // Si el campo está vacío se cobra el monto exacto; si tiene valor debe cubrir el total
+        const totalReq = method.moneda === 'BS' ? totalBs : totalUsd;
+        const montoVal = campoVacio ? totalReq : parseFloat(montoRecibido);
+        if (isNaN(montoVal) || montoVal < totalReq) return;
 
         setProcessing(true);
         try {
             const token = localStorage.getItem('token');
-            const monto = parseFloat(montoRecibido) || (method.moneda === 'USD' ? totalUsd : totalBs);
+            const monto = montoVal;
 
             const payload = {
                 items: cart.map(item => ({
@@ -93,7 +109,6 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
 
     if (!isOpen) return null;
 
-    const method = PAYMENT_METHODS.find(m => m.id === selectedMethod);
     const isBs = method?.moneda === 'BS';
 
     // Pantalla de confirmación post-venta
@@ -194,15 +209,43 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                         placeholder={isBs ? totalBs.toFixed(2) : totalUsd.toFixed(2)}
                         style={{
                             width: '100%', padding: '0.75rem',
-                            border: '2px solid #e2e8f0', borderRadius: '0.5rem',
-                            fontSize: '1.125rem', textAlign: 'right'
+                            border: `2px solid ${esPagoInsuficiente ? '#ef4444' : vuelto > 0 ? '#16a34a' : '#e2e8f0'}`,
+                            borderRadius: '0.5rem',
+                            fontSize: '1.125rem', textAlign: 'right',
+                            outline: 'none',
+                            transition: 'border-color 0.15s',
+                            backgroundColor: esPagoInsuficiente ? '#fff5f5' : 'white'
                         }}
                         autoFocus
                     />
-                    {vuelto > 0 && (
-                        <p style={{ color: '#16a34a', fontWeight: 600, textAlign: 'right', marginTop: '0.5rem', fontSize: '0.9rem' }}>
-                            Vuelto: {isBs ? 'Bs.' : '$'} {vuelto.toFixed(2)}
-                        </p>
+                    {/* Mensaje de monto insuficiente */}
+                    {esPagoInsuficiente && (
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '0.375rem',
+                            marginTop: '0.5rem', padding: '0.5rem 0.75rem',
+                            backgroundColor: '#fef2f2', borderRadius: '0.5rem',
+                            border: '1px solid #fecaca'
+                        }}>
+                            <span style={{ fontSize: '1rem' }}>⚠️</span>
+                            <p style={{ color: '#dc2626', fontSize: '0.82rem', fontWeight: 600, margin: 0 }}>
+                                Monto insuficiente — faltan{' '}
+                                <strong>{isBs ? 'Bs.' : '$'} {faltante.toFixed(2)}</strong>
+                            </p>
+                        </div>
+                    )}
+                    {/* Vuelto */}
+                    {vuelto > 0 && !esPagoInsuficiente && (
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '0.375rem',
+                            marginTop: '0.5rem', padding: '0.5rem 0.75rem',
+                            backgroundColor: '#f0fdf4', borderRadius: '0.5rem',
+                            border: '1px solid #bbf7d0'
+                        }}>
+                            <span style={{ fontSize: '1rem' }}>✅</span>
+                            <p style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.85rem', margin: 0 }}>
+                                Vuelto: <strong>{isBs ? 'Bs.' : '$'} {vuelto.toFixed(2)}</strong>
+                            </p>
+                        </div>
                     )}
                 </div>
 
@@ -225,18 +268,29 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                 {/* Botón Cobrar */}
                 <button
                     onClick={handleConfirmarPago}
-                    disabled={processing}
+                    disabled={processing || esPagoInsuficiente}
                     style={{
                         width: '100%', padding: '1rem',
-                        backgroundColor: processing ? '#94a3b8' : '#16a34a',
-                        color: 'white', border: 'none', borderRadius: '0.75rem',
-                        fontSize: '1.1rem', fontWeight: 700, cursor: processing ? 'not-allowed' : 'pointer',
+                        backgroundColor: processing
+                            ? '#94a3b8'
+                            : esPagoInsuficiente
+                                ? '#e2e8f0'
+                                : '#16a34a',
+                        color: esPagoInsuficiente && !processing ? '#94a3b8' : 'white',
+                        border: 'none', borderRadius: '0.75rem',
+                        fontSize: '1.1rem', fontWeight: 700,
+                        cursor: (processing || esPagoInsuficiente) ? 'not-allowed' : 'pointer',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                        transition: 'background-color 0.15s'
+                        transition: 'all 0.15s'
                     }}
                 >
                     <Check size={20} />
-                    {processing ? 'Procesando...' : `Confirmar Pago`}
+                    {processing
+                        ? 'Procesando...'
+                        : esPagoInsuficiente
+                            ? `Faltan ${isBs ? 'Bs.' : '$'} ${faltante.toFixed(2)}`
+                            : 'Confirmar Pago'
+                    }
                 </button>
             </div>
         </div>

@@ -25,12 +25,12 @@ class BcvSyncService {
     get sources() {
         return [
             {
-                name: 'DolarApi.com',
+                name: 'DolarApi.com (oficial)',
                 fetch: () => this._fetchDolarApi()
             },
             {
-                name: 'bcv.justcarlux.dev',
-                fetch: () => this._fetchJustcarlux()
+                name: 'ExchangeRate-API (VES)',
+                fetch: () => this._fetchExchangeRateApi()
             },
             {
                 name: 'BCV Directo (scraping)',
@@ -40,77 +40,82 @@ class BcvSyncService {
     }
 
     /**
-     * Fuente 1: ve.dolarapi.com — API pública sin autenticación
+     * Fuente 1: ve.dolarapi.com — endpoint directo del dólar oficial BCV
+     * Usa /dolares/oficial para obtener exactamente la tasa BCV sin filtros.
      */
     async _fetchDolarApi() {
-        const res = await fetch('https://ve.dolarapi.com/v1/dolares', {
+        const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', {
             signal: AbortSignal.timeout(8000)
         });
         if (!res.ok) throw new Error(`DolarApi HTTP ${res.status}`);
         const data = await res.json();
 
-        // Buscar el dólar oficial (BCV)
-        const oficial = data.find(d =>
-            d.fuente === 'BCV' ||
-            d.nombre?.toLowerCase().includes('oficial') ||
-            d.nombreCorto?.toLowerCase().includes('oficial')
-        );
-
-        if (!oficial || !oficial.promedio) throw new Error('No se encontró tasa oficial en DolarApi');
+        const tasa = data?.promedio;
+        if (!tasa || isNaN(parseFloat(tasa))) throw new Error('No se encontró tasa en DolarApi /oficial');
 
         return {
-            tasa: parseFloat(oficial.promedio),
+            tasa: parseFloat(tasa),
             fuente: 'DolarApi.com (BCV Oficial)'
         };
     }
 
     /**
-     * Fuente 2: API comunitaria bcv.justcarlux.dev
+     * Fuente 2: exchangerate.host — tasa USD → VES (fallback gratuito sin key)
      */
-    async _fetchJustcarlux() {
-        const res = await fetch('https://bcv.justcarlux.dev/api/v1/rates', {
+    async _fetchExchangeRateApi() {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD', {
             signal: AbortSignal.timeout(8000)
         });
-        if (!res.ok) throw new Error(`Justcarlux HTTP ${res.status}`);
+        if (!res.ok) throw new Error(`ExchangeRate-API HTTP ${res.status}`);
         const data = await res.json();
 
-        const tasa = data?.usd || data?.USD || data?.dolar || data?.dollar;
-        if (!tasa) throw new Error('Estructura inesperada en Justcarlux');
+        const tasa = data?.rates?.VES;
+        if (!tasa || isNaN(parseFloat(tasa))) throw new Error('No se encontró VES en ExchangeRate-API');
 
         return {
             tasa: parseFloat(tasa),
-            fuente: 'bcv.justcarlux.dev'
+            fuente: 'ExchangeRate-API (VES)'
         };
     }
 
     /**
-     * Fuente 3: Scraping directo del BCV
-     * El BCV publica las tasas en su web como texto plano en algunos endpoints
+     * Fuente 3: Scraping directo de la homepage del BCV
+     * El BCV publica las tasas en su web principal (bcv.org.ve).
+     * Busca el bloque de tipo de cambio USD con formato venezolano (ej: 91,3456 o 484,7404).
      */
     async _fetchBcvDirect() {
-        const res = await fetch('https://www.bcv.org.ve/tasas-informativas-del-sistema-financiero', {
-            signal: AbortSignal.timeout(10000),
+        const res = await fetch('https://www.bcv.org.ve', {
+            signal: AbortSignal.timeout(15000),
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'es-VE,es;q=0.9,en;q=0.8'
             }
         });
         if (!res.ok) throw new Error(`BCV Directo HTTP ${res.status}`);
         const html = await res.text();
 
-        // El BCV publica el tipo de cambio de forma reconocible en su HTML
-        // Buscar patrón: número con formato venezolano (ej: 91,3456 o 91.3456)
-        const matches = html.match(/(?:USD|US\$|D[ó|o]lar)[^0-9]*([0-9]{1,3}[.,][0-9]{2,6})/i);
-        if (!matches) throw new Error('No se pudo extraer la tasa del HTML del BCV');
+        // El BCV publica el tipo de cambio en un bloque reconocible
+        // Formato: número con coma decimal venezolano (ej: 484,7404) o punto
+        // Buscamos en el contexto de "USD" o "dólar"
+        const patterns = [
+            /id=["']dolar["'][^>]*>[\s\S]*?([0-9]{2,4}[,\.][0-9]{2,6})/i,
+            /USD[\s\S]{0,200}?([0-9]{2,4}[,\.][0-9]{4,6})/i,
+            /([0-9]{2,4}[,\.][0-9]{4,6})[\s\S]{0,200}?USD/i
+        ];
 
-        const tasaStr = matches[1].replace(',', '.');
-        const tasa = parseFloat(tasaStr);
+        for (const pattern of patterns) {
+            const m = html.match(pattern);
+            if (m) {
+                const tasaStr = m[1].replace(',', '.');
+                const tasa = parseFloat(tasaStr);
+                if (!isNaN(tasa) && tasa > 1) {
+                    return { tasa, fuente: 'BCV Directo (scraping)' };
+                }
+            }
+        }
 
-        if (isNaN(tasa) || tasa < 1) throw new Error('Tasa extraída inválida');
-
-        return {
-            tasa,
-            fuente: 'BCV Directo (scraping)'
-        };
+        throw new Error('No se pudo extraer la tasa del HTML del BCV');
     }
 
     /**
