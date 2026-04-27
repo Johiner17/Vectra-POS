@@ -9,6 +9,7 @@ const Inventory = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [tasaBcv, setTasaBcv] = useState(0);
 
     // Modals state
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -19,7 +20,17 @@ const Inventory = () => {
     // Initial load
     useEffect(() => {
         fetchProducts();
+        fetchTasa();
     }, []);
+
+    const fetchTasa = async () => {
+        try {
+            const res = await axios.get('/api/currency/rate');
+            setTasaBcv(res.data.data.tasa || 0);
+        } catch {
+            console.error('No se pudo obtener la tasa BCV');
+        }
+    };
 
     const fetchProducts = async (query = '') => {
         setLoading(true);
@@ -94,7 +105,8 @@ const Inventory = () => {
                         <tr>
                             <th style={{ padding: '1rem', textAlign: 'left' }}>Código</th>
                             <th style={{ padding: '1rem', textAlign: 'left' }}>Producto</th>
-                            <th style={{ padding: '1rem', textAlign: 'right' }}>Precio Venta (USD)</th>
+                            <th style={{ padding: '1rem', textAlign: 'right' }}>Precio (USD)</th>
+                            <th style={{ padding: '1rem', textAlign: 'right' }}>Precio (Bs.)</th>
                             <th style={{ padding: '1rem', textAlign: 'right' }}>Stock</th>
                             <th style={{ padding: '1rem', textAlign: 'center' }}>Acciones</th>
                         </tr>
@@ -106,6 +118,12 @@ const Inventory = () => {
                                 <td style={{ padding: '1rem', fontWeight: 500 }}>{product.nombre}</td>
                                 <td style={{ padding: '1rem', textAlign: 'right', color: '#2563eb' }}>
                                     ${(product.precio_venta_usd_centavos / 100).toFixed(2)}
+                                </td>
+                                <td style={{ padding: '1rem', textAlign: 'right', color: '#16a34a' }}>
+                                    {tasaBcv > 0
+                                        ? `Bs. ${((product.precio_venta_usd_centavos / 100) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                        : '—'
+                                    }
                                 </td>
                                 <td style={{ padding: '1rem', textAlign: 'right' }}>
                                     <span style={{
@@ -135,7 +153,7 @@ const Inventory = () => {
                             </tr>
                         ))}
                         {products.length === 0 && !loading && (
-                            <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>No se encontraron productos</td></tr>
+                            <tr><td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>No se encontraron productos</td></tr>
                         )}
                     </tbody>
                 </table>
