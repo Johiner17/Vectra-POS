@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Plus, Edit2, ArrowRightLeft, History, Search } from 'lucide-react';
 import ProductModal from '../components/ProductModal';
@@ -22,6 +22,16 @@ const Inventory = () => {
         fetchProducts();
         fetchTasa();
     }, []);
+
+    // Dynamic search with debounce
+    const debounceRef = useRef(null);
+    useEffect(() => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            fetchProducts(searchTerm);
+        }, 300);
+        return () => clearTimeout(debounceRef.current);
+    }, [searchTerm]);
 
     const fetchTasa = async () => {
         try {
@@ -48,7 +58,7 @@ const Inventory = () => {
 
     const handleSearch = (e) => {
         e.preventDefault();
-        fetchProducts(searchTerm);
+        // El debounce ya dispara la búsqueda; aquí sólo prevenimos el submit
     };
 
     const openEdit = (prod) => {
