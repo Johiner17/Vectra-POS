@@ -156,7 +156,7 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
             <div style={modalStyle}>
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>Cobrar</h3>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b' }}>Cobrar</h3>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
                         <X size={22} color="#64748b" />
                     </button>
@@ -165,9 +165,9 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                 {/* Resumen del total */}
                 <div style={{ backgroundColor: '#1e293b', borderRadius: '0.75rem', padding: '1.25rem', marginBottom: '1.5rem', textAlign: 'center' }}>
                     <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Total a Cobrar</p>
-                    <p style={{ color: 'white', fontSize: '2rem', fontWeight: 700 }}>${totalUsd.toFixed(2)}</p>
-                    <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
-                        Bs. {totalBs.toFixed(2)} <span style={{ opacity: 0.7 }}>(Tasa: {tasaBcv.toFixed(2)})</span>
+                    <p style={{ color: 'white', fontSize: '2rem', fontWeight: 700 }}>$ {totalUsd.toFixed(2)}</p>
+                    <p style={{ color: '#94a3b8', fontSize: '1.25rem' }}>
+                        Bs. {totalBs.toFixed(2)} <span style={{ opacity: 0.7 }}></span>
                     </p>
                 </div>
 
@@ -241,8 +241,7 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                             backgroundColor: '#f0fdf4', borderRadius: '0.5rem',
                             border: '1px solid #bbf7d0'
                         }}>
-                            <span style={{ fontSize: '1rem' }}>✅</span>
-                            <p style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.85rem', margin: 0 }}>
+                            <p style={{ color: '#16a34a', fontWeight: 600, fontSize: '1.125rem', margin: 0 }}>
                                 Vuelto: <strong>{isBs ? 'Bs.' : '$'} {vuelto.toFixed(2)}</strong>
                             </p>
                         </div>
@@ -250,7 +249,7 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                 </div>
 
                 {/* Referencia (opcional para transferencias) */}
-                {(selectedMethod.includes('transferencia') || selectedMethod === 'punto_venta') && (
+                {selectedMethod.includes('transferencia') && (
                     <div style={{ marginBottom: '1rem' }}>
                         <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '0.5rem' }}>
                             Referencia (Opcional)

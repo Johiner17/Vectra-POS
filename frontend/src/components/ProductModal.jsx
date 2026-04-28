@@ -77,8 +77,16 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
             onClose();
         } catch (error) {
             console.error(error);
-            const msg = error.response?.data?.error || 'Error guardando producto';
-            toast.error(msg);
+            const rawMsg = error.response?.data?.error || '';
+            let msg = 'Error guardando producto';
+
+            if (rawMsg.includes('UNIQUE constraint failed: productos.codigo_barras')) {
+                msg = `El código de barras "${formData.codigo_barras}" ya está registrado. Por favor, verifica el código o busca el producto existente.`;
+            } else if (rawMsg) {
+                msg = rawMsg;
+            }
+
+            toast.error(msg, { duration: 5000 });
         }
     };
 
