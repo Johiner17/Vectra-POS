@@ -65,13 +65,20 @@ const SaleDetailModal = ({ sale, onClose }) => {
                             </h4>
                             <div style={{ marginBottom: '1.5rem' }}>
                                 {sale.payments.map((p, i) => (
-                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #f8fafc' }}>
-                                        <span style={{ fontSize: '0.875rem', color: '#374151', textTransform: 'capitalize' }}>
-                                            {p.tipo_pago?.replace(/_/g, ' ')}
-                                        </span>
-                                        <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                                            {p.moneda === 'BS' ? 'Bs.' : '$'} {(p.monto_centavos / 100).toFixed(2)}
-                                        </span>
+                                    <div key={i} style={{ padding: '0.5rem 0', borderBottom: '1px solid #f8fafc' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span style={{ fontSize: '0.875rem', color: '#374151', textTransform: 'capitalize' }}>
+                                                {p.tipo_pago?.replace(/_/g, ' ')}
+                                            </span>
+                                            <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                                                {p.moneda === 'BS' ? 'Bs.' : '$'} {(p.monto_centavos / 100).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        {p.referencia && (
+                                            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>
+                                                Ref: {p.referencia}
+                                            </p>
+                                        )}
                                     </div>
                                 ))}
                             </div>
