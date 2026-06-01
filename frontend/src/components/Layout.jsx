@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, ClipboardList, TrendingUp, Settings, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, ClipboardList, TrendingUp, Settings, LogOut, User, Palette } from 'lucide-react';
 
 const Layout = () => {
     const navigate = useNavigate();
@@ -20,6 +20,7 @@ const Layout = () => {
         { icon: ClipboardList, label: 'Historial de Ventas', path: '/sales' },
         { icon: TrendingUp, label: 'Tasa BCV', path: '/currency' },
         { icon: Settings, label: 'Configuración', path: '/settings' },
+        { icon: Palette, label: 'Personalización', path: '/customization' },
     ];
 
     const rolLabels = {

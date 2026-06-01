@@ -58,8 +58,8 @@ class ProductController {
            codigo_barras, nombre, categoria_id, 
            precio_venta_usd_centavos, precio_costo_usd_centavos,
            stock_actual, stock_minimo, unidad_medida, 
-           aplica_iva, tasa_iva
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           aplica_iva, tasa_iva, imagen
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     req.body.codigo_barras,
                     req.body.nombre,
@@ -70,7 +70,8 @@ class ProductController {
                     req.body.stock_minimo,
                     (req.body.unidad_medida || 'unidad').toLowerCase(), // Normalize to lowercase for CHECK constraint
                     parseInt(req.body.aplica_iva || 0),
-                    parseFloat(req.body.tasa_iva || 0)
+                    parseFloat(req.body.tasa_iva || 0),
+                    req.body.imagen || null
                 ]
             );
             res.json({ success: true, id: result.lastID });

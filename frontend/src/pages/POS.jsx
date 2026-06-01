@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Minus, Trash2, ShoppingCart, X } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingCart, X, Package, Tag, Coffee, Box, Star } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import CheckoutModal from '../components/CheckoutModal';
@@ -12,11 +12,32 @@ const POS = () => {
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
     const [tasaBcv, setTasaBcv] = useState(0);
+    const [posConfig, setPosConfig] = useState({ 
+        icon: 'ShoppingCart', 
+        bg: '#eff6ff', 
+        iconColor: '#3b82f6',
+        useImage: false,
+        image: ''
+    });
     const searchRef = useRef(null);
 
     useEffect(() => {
         fetchProducts('');
         fetchRate();
+        
+        const savedIcon = localStorage.getItem('pos_product_icon') || 'ShoppingCart';
+        const savedBg = localStorage.getItem('pos_product_bg') || '#eff6ff';
+        const savedIconColor = localStorage.getItem('pos_product_icon_color') || '#3b82f6';
+        const savedUseImage = localStorage.getItem('pos_product_use_image') === 'true';
+        const savedImage = localStorage.getItem('pos_product_image') || '';
+        setPosConfig({ 
+            icon: savedIcon, 
+            bg: savedBg, 
+            iconColor: savedIconColor,
+            useImage: savedUseImage,
+            image: savedImage
+        });
+        
         // Focus en la búsqueda al cargar
         if (searchRef.current) searchRef.current.focus();
     }, []);
@@ -117,6 +138,9 @@ const POS = () => {
         fetchProducts('');
     };
 
+    const iconsMap = { ShoppingCart, Package, Tag, Coffee, Box, Star };
+    const ProductIcon = iconsMap[posConfig.icon] || ShoppingCart;
+
     return (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1.5rem', height: 'calc(100vh - 130px)' }}>
 
@@ -161,13 +185,32 @@ const POS = () => {
                             onMouseEnter={e => { if (product.stock_actual > 0) e.currentTarget.style.borderColor = '#2563eb'; }}
                             onMouseLeave={e => e.currentTarget.style.borderColor = '#f1f5f9'}
                         >
-                            {/* Ícono / color placeholder */}
+                            {/* Ícono / color placeholder u Opcion de Imagen */}
                             <div style={{
-                                height: '64px', borderRadius: '0.5rem', marginBottom: '0.625rem',
-                                backgroundColor: product.stock_actual <= 0 ? '#f1f5f9' : '#eff6ff',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                height: '80px', borderRadius: '0.5rem', marginBottom: '0.625rem',
+                                backgroundColor: product.stock_actual <= 0 ? '#f1f5f9' : (product.imagen || (posConfig.useImage && posConfig.image) ? 'transparent' : posConfig.bg),
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                overflow: 'hidden',
+                                transition: 'all 0.2s ease',
+                                border: '1px solid #f1f5f9'
                             }}>
-                                <ShoppingCart size={24} color={product.stock_actual <= 0 ? '#cbd5e1' : '#3b82f6'} />
+                                {product.imagen ? (
+                                    <img 
+                                        src={product.imagen} 
+                                        alt={product.nombre} 
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                    />
+                                ) : product.stock_actual <= 0 ? (
+                                    <ProductIcon size={24} color="#cbd5e1" />
+                                ) : posConfig.useImage && posConfig.image ? (
+                                    <img 
+                                        src={posConfig.image} 
+                                        alt={product.nombre} 
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                    />
+                                ) : (
+                                    <ProductIcon size={24} color={posConfig.iconColor} />
+                                )}
                             </div>
                             <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1e293b', marginBottom: '0.25rem', lineHeight: 1.3 }}>
                                 {product.nombre}

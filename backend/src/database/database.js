@@ -35,6 +35,14 @@ class DatabaseManager {
             // Habilitar claves foráneas
             await this.db.exec('PRAGMA foreign_keys = ON;');
 
+            // Migración automática para agregar columna imagen si no existe
+            try {
+                await this.db.exec('ALTER TABLE productos ADD COLUMN imagen TEXT;');
+                console.log('⚡ Columna "imagen" agregada a la tabla "productos"');
+            } catch (e) {
+                // La columna ya existe o error no crítico
+            }
+
             console.log(`✅ Base de datos conectada: ${this.dbPath}`);
             return this.db;
         } catch (error) {

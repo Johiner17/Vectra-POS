@@ -9,6 +9,7 @@ import Sales from './pages/Sales';
 import CurrencyPage from './pages/CurrencyPage';
 import Settings from './pages/Settings';
 import Layout from './components/Layout';
+import Customization from './pages/Customization';
 
 // Verificación de autenticación real (token en localStorage)
 const ProtectedRoute = ({ children }) => {
@@ -36,6 +37,7 @@ function App() {
                     <Route path="sales" element={<Sales />} />
                     <Route path="currency" element={<CurrencyPage />} />
                     <Route path="settings" element={<Settings />} />
+                    <Route path="customization" element={<Customization />} />
                 </Route>
             </Routes>
         </BrowserRouter>

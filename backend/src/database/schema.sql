@@ -56,6 +56,8 @@ CREATE TABLE IF NOT EXISTS productos (
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
     
+    imagen TEXT,
+    
     FOREIGN KEY (categoria_id) REFERENCES categorias(id)
 );
 
