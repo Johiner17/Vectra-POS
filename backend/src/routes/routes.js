@@ -7,6 +7,7 @@ const CurrencyController = require('../controllers/CurrencyController');
 const InventoryController = require('../controllers/InventoryController');
 const CajaController = require('../controllers/CajaController');
 const DashboardController = require('../controllers/DashboardController');
+const ReportController = require('../controllers/ReportController');
 const AuthController = require('../controllers/AuthController');
 const ConfigController = require('../controllers/ConfigController');
 const authMiddleware = require('../middleware/authMiddleware');
@@ -67,6 +68,9 @@ router.get('/caja/:apertura_id/summary', CajaController.getSalesSummary);
 
 // --- Dashboard ---
 router.get('/dashboard/stats', DashboardController.getStats);
+
+// --- Reportes ---
+router.get('/reports/stats', ReportController.getReportStats);
 
 // --- Categorías ---
 router.get('/categories', async (req, res, next) => {

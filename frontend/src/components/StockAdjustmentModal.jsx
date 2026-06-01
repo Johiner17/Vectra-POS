@@ -127,7 +127,7 @@ const StockAdjustmentModal = ({ isOpen, onClose, product, onSave }) => {
 
                     <div style={{ display: 'grid', gridTemplateColumns: type === 'entrada' ? '1fr 1fr' : '1fr', gap: '1rem' }}>
                         <div>
-                            <label style={labelStyle}>{type === 'ajuste' ? 'Nuevo Stock Real' : 'Cantidad'}</label>
+                            <label style={{...labelStyle, fontSize: '1rem'}}>{type === 'ajuste' ? 'Nuevo Stock Real' : 'Cantidad'}</label>
                             <input
                                 required
                                 type="number"
@@ -145,7 +145,7 @@ const StockAdjustmentModal = ({ isOpen, onClose, product, onSave }) => {
 
                         {type === 'entrada' && (
                             <div>
-                                <label style={labelStyle}>Costo Unit. USD</label>
+                                <label style={{...labelStyle, fontSize: '1rem'}}>Costo Unit. USD</label>
                                 <input
                                     type="number"
                                     step="0.01"
@@ -164,7 +164,7 @@ const StockAdjustmentModal = ({ isOpen, onClose, product, onSave }) => {
                     </div>
 
                     <div>
-                        <label style={labelStyle}>Observaciones</label>
+                        <label style={{...labelStyle, fontSize: '1rem'}}>Observaciones</label>
                         <textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
