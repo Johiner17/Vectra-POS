@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { X, History } from 'lucide-react';
 import { format } from 'date-fns';
+import { productRepository } from '../services/productRepository';
 
 const KardexModal = ({ isOpen, onClose, product }) => {
     const [movements, setMovements] = useState([]);
@@ -16,11 +16,8 @@ const KardexModal = ({ isOpen, onClose, product }) => {
     const fetchKardex = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get(`/api/inventory/kardex/${product.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setMovements(res.data.data.movimientos || []);
+            const items = await productRepository.getKardex(product.id);
+            setMovements(items);
         } catch (error) {
             console.error(error);
         } finally {

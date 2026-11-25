@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { X, ArrowRightLeft } from 'lucide-react';
+import { productRepository } from '../services/productRepository';
 
 const StockAdjustmentModal = ({ isOpen, onClose, product, onSave }) => {
     const [type, setType] = useState('entrada'); // entrada, salida, ajuste
@@ -9,12 +9,18 @@ const StockAdjustmentModal = ({ isOpen, onClose, product, onSave }) => {
     const [cost, setCost] = useState('');
     const [notes, setNotes] = useState('');
 
+    useEffect(() => {
+        if (isOpen) {
+            setType('entrada');
+            setAmount('');
+            setCost('');
+            setNotes('');
+        }
+    }, [isOpen, product]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-
             const payload = {
                 type,
                 producto_id: product.id,
@@ -22,22 +28,21 @@ const StockAdjustmentModal = ({ isOpen, onClose, product, onSave }) => {
             };
 
             if (type === 'ajuste') {
-                payload.stock_nuevo = parseInt(amount);
-                // Ajuste absoluto
+                payload.stock_nuevo = Number(amount);
             } else {
-                payload.cantidad = parseInt(amount);
+                payload.cantidad = Number(amount);
                 if (type === 'entrada' && cost) {
                     payload.costo_unitario_usd = parseFloat(cost);
                 }
             }
 
-            await axios.post('/api/inventory/movement', payload, config);
+            await productRepository.registerStockMovement(payload);
             toast.success('Movimiento registrado');
             onSave(); // Refresh list
             onClose();
         } catch (error) {
             console.error(error);
-            toast.error(error.response?.data?.error || 'Error registrando movimiento');
+            toast.error(error.message || 'Error registrando movimiento');
         }
     };
 
@@ -70,8 +75,8 @@ const StockAdjustmentModal = ({ isOpen, onClose, product, onSave }) => {
             <div style={{
                 backgroundColor: 'white',
                 borderRadius: '1.25rem',
-                width: '460px',
-                maxHeight: '90vh',
+                width: 'min(460px, calc(100vw - 1.5rem))',
+                maxHeight: '92dvh',
                 overflowY: 'auto',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
                 display: 'flex',

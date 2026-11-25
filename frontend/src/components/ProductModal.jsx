@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { X, Save, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
+import { productRepository } from '../services/productRepository';
 
 const ProductModal = ({ isOpen, onClose, product, onSave }) => {
     const [formData, setFormData] = useState({
@@ -25,8 +25,14 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
         if (product) {
             setFormData({
                 ...product,
-                precio_venta_usd: product.precio_venta_usd_centavos ? product.precio_venta_usd_centavos / 100 : '',
-                precio_costo_usd: product.precio_costo_usd_centavos ? product.precio_costo_usd_centavos / 100 : '',
+                precio_venta_usd:
+                    product.precio_venta_usd_centavos !== undefined && product.precio_venta_usd_centavos !== null
+                        ? product.precio_venta_usd_centavos / 100
+                        : '',
+                precio_costo_usd:
+                    product.precio_costo_usd_centavos !== undefined && product.precio_costo_usd_centavos !== null
+                        ? product.precio_costo_usd_centavos / 100
+                        : '',
                 imagen: product.imagen || ''
             });
         } else {
@@ -133,26 +139,32 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const {
+                precio_venta_usd_centavos: _ignoredVentaCentavos,
+                precio_costo_usd_centavos: _ignoredCostoCentavos,
+                ...cleanFormData
+            } = formData;
+
             const payload = {
-                ...formData,
-                stock_actual: parseInt(formData.stock_actual) || 0,
-                stock_minimo: parseInt(formData.stock_minimo) || 0,
-                precio_venta_usd: parseFloat(formData.precio_venta_usd),
-                precio_costo_usd: parseFloat(formData.precio_costo_usd),
+                ...cleanFormData,
+                stock_actual: Number(formData.stock_actual) || 0,
+                stock_minimo: Number(formData.stock_minimo) || 0,
+                precio_venta_usd: parseFloat(formData.precio_venta_usd) || 0,
+                precio_costo_usd: parseFloat(formData.precio_costo_usd) || 0,
             };
 
             if (product) {
-                await axios.put(`/api/products/${product.id}`, payload);
+                await productRepository.update(product.id, payload);
                 toast.success('Producto actualizado');
             } else {
-                await axios.post('/api/products', payload);
+                await productRepository.create(payload);
                 toast.success('Producto creado');
             }
             onSave();
             onClose();
         } catch (error) {
             console.error(error);
-            const rawMsg = error.response?.data?.error || '';
+            const rawMsg = error.response?.data?.error || error.message || '';
             let msg = 'Error guardando producto';
 
             if (rawMsg.includes('UNIQUE constraint failed: productos.codigo_barras')) {
@@ -179,8 +191,8 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
             <div style={{
                 backgroundColor: 'white',
                 borderRadius: '1.25rem',
-                width: '560px',
-                maxHeight: '90vh',
+                width: 'min(560px, calc(100vw - 1.5rem))',
+                maxHeight: '92dvh',
                 overflowY: 'auto',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
                 display: 'flex',
@@ -216,7 +228,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                 <form onSubmit={handleSubmit} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
                     {/* Sección Superior: Foto e Información Esencial */}
-                    <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
 
                         {/* Selector de Imagen Moderno */}
                         <div
@@ -332,11 +344,10 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                                     Código de Barras
                                 </label>
                                 <input
-                                    required
                                     name="codigo_barras"
-                                    value={formData.codigo_barras}
+                                    value={formData.codigo_barras || ''}
                                     onChange={handleChange}
-                                    placeholder="Ej: 759100123456"
+                                    placeholder="Ej: 759100123456 (opcional)"
                                     style={{
                                         width: '100%', padding: '0.55rem 0.75rem',
                                         border: '1.5px solid #e2e8f0', borderRadius: '0.5rem',
@@ -399,26 +410,24 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
                             <label style={{ display: 'block', fontSize: '1rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>
-                                Stock Inicial
+                                {product ? 'Stock Actual' : 'Stock Inicial'}
                             </label>
                             <input
                                 required
                                 type="number"
+                                min="0"
+                                step="any"
                                 name="stock_actual"
                                 value={formData.stock_actual}
                                 onChange={handleChange}
-                                disabled={!!product}
-                                title={product ? "Use la función de Ajuste de Stock en la lista" : ""}
                                 style={{
                                     width: '100%', padding: '0.55rem 0.75rem',
                                     border: '1.5px solid #e2e8f0', borderRadius: '0.5rem',
                                     fontSize: '0.875rem', outline: 'none', transition: 'border-color 0.15s',
-                                    backgroundColor: product ? '#f1f5f9' : 'white',
-                                    color: product ? '#64748b' : 'inherit',
-                                    cursor: product ? 'not-allowed' : 'text'
+                                    backgroundColor: 'white'
                                 }}
-                                onFocus={e => !product && (e.currentTarget.style.borderColor = '#2563eb')}
-                                onBlur={e => !product && (e.currentTarget.style.borderColor = '#e2e8f0')}
+                                onFocus={e => (e.currentTarget.style.borderColor = '#2563eb')}
+                                onBlur={e => (e.currentTarget.style.borderColor = '#e2e8f0')}
                             />
                         </div>
                         <div>

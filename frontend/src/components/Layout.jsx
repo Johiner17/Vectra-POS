@@ -1,135 +1,260 @@
-import React from 'react';
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, ClipboardList, TrendingUp, Settings, LogOut, User, Palette, BarChart3 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
+import {
+    LayoutDashboard, ShoppingCart, Package, ClipboardList,
+    TrendingUp, Settings, Store, Palette, BarChart3, Menu, X
+} from 'lucide-react';
+import { settingsRepository } from '../services/settingsRepository';
+
+/** Detecta si la pantalla es móvil (< 768px) */
+function useIsMobile() {
+    const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+    useEffect(() => {
+        const handler = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handler);
+        return () => window.removeEventListener('resize', handler);
+    }, []);
+    return isMobile;
+}
+
+const navItems = [
+    { icon: LayoutDashboard, label: 'Dashboard',          path: '/dashboard' },
+    { icon: ShoppingCart,   label: 'Punto de Venta',      path: '/pos' },
+    { icon: Package,        label: 'Inventario',           path: '/inventory' },
+    { icon: ClipboardList,  label: 'Historial de Ventas',  path: '/sales' },
+    { icon: BarChart3,      label: 'Reportería',           path: '/reports' },
+    { icon: TrendingUp,     label: 'Tasa BCV',             path: '/currency' },
+    { icon: Settings,       label: 'Configuración',        path: '/settings' },
+    { icon: Palette,        label: 'Personalización',      path: '/customization' },
+];
+
+/** Ítems que aparecen en la barra inferior de móvil */
+const bottomNavItems = [
+    { icon: ShoppingCart,  label: 'POS',          path: '/pos' },
+    { icon: Package,       label: 'Inventario',    path: '/inventory' },
+    { icon: ClipboardList, label: 'Ventas',        path: '/sales' },
+    { icon: LayoutDashboard, label: 'Dashboard',   path: '/dashboard' },
+    { icon: Settings,      label: 'Config',        path: '/settings' },
+];
 
 const Layout = () => {
-    const navigate = useNavigate();
     const location = useLocation();
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isMobile = useIsMobile();
+    const [businessName, setBusinessName] = useState('Vectra POS');
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/login');
-    };
+    useEffect(() => {
+        const loadBusiness = async () => {
+            try {
+                const cfg = await settingsRepository.getConfig();
+                if (cfg?.empresa_nombre) setBusinessName(cfg.empresa_nombre);
+            } catch {
+                // usar nombre por defecto
+            }
+        };
+        loadBusiness();
+        window.addEventListener('vectra:config-updated', loadBusiness);
+        return () => window.removeEventListener('vectra:config-updated', loadBusiness);
+    }, []);
 
-    const navItems = [
-        { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-        { icon: ShoppingCart, label: 'Punto de Venta', path: '/pos' },
-        { icon: Package, label: 'Inventario', path: '/inventory' },
-        { icon: ClipboardList, label: 'Historial de Ventas', path: '/sales' },
-        { icon: BarChart3, label: 'Reportería', path: '/reports' },
-        { icon: TrendingUp, label: 'Tasa BCV', path: '/currency' },
-        { icon: Settings, label: 'Configuración', path: '/settings' },
-        { icon: Palette, label: 'Personalización', path: '/customization' },
-    ];
+    // Cierra sidebar al navegar en móvil
+    useEffect(() => {
+        setSidebarOpen(false);
+    }, [location.pathname]);
 
-    const rolLabels = {
-        admin: 'Administrador',
-        cajero: 'Cajero',
-        supervisor: 'Supervisor'
-    };
+    const currentLabel = navItems.find(i => location.pathname.startsWith(i.path))?.label || 'Vectra POS';
 
-    return (
-        <div style={{ display: 'flex', height: '100vh' }}>
-            {/* Sidebar */}
-            <aside style={{
-                width: '250px',
-                backgroundColor: '#1e293b',
-                color: 'white',
-                display: 'flex',
-                flexDirection: 'column'
-            }}>
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid #334155' }}>
-                    <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>Vectra POS</h1>
+    /* ── Sidebar compartido (desktop siempre visible / móvil como drawer) ── */
+    const SidebarContent = () => (
+        <aside style={{
+            width: '250px',
+            backgroundColor: '#1e293b',
+            color: 'white',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+        }}>
+            {/* Logo / Nombre */}
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                    <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>{businessName}</h1>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
                         <div style={{
                             width: '28px', height: '28px', borderRadius: '50%',
                             background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}>
-                            <User size={14} color="#fff" />
+                            <Store size={14} color="#fff" />
                         </div>
                         <div>
-                            <p style={{ fontSize: '0.8125rem', color: '#e2e8f0', margin: 0 }}>
-                                {user.nombre_completo || user.username || 'Usuario'}
-                            </p>
-                            <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: 0 }}>
-                                {rolLabels[user.rol] || user.rol || ''}
-                            </p>
+                            <p style={{ fontSize: '0.8125rem', color: '#e2e8f0', margin: 0 }}>Modo Local</p>
+                            <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: 0 }}>Offline-First PWA</p>
                         </div>
                     </div>
                 </div>
-
-                <nav style={{ flex: 1, padding: '1rem' }}>
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.path}
-                            to={item.path}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                padding: '0.75rem 1rem',
-                                marginBottom: '0.25rem',
-                                borderRadius: '0.5rem',
-                                color: location.pathname === item.path ? 'white' : '#94a3b8',
-                                backgroundColor: location.pathname === item.path ? '#2563eb' : 'transparent',
-                                transition: 'all 0.2s',
-                                fontSize: '0.875rem'
-                            }}
-                        >
-                            <item.icon size={20} style={{ marginRight: '0.75rem' }} />
-                            {item.label}
-                        </Link>
-                    ))}
-                </nav>
-
-                <div style={{ padding: '1rem', borderTop: '1px solid #334155' }}>
+                {/* Botón cerrar en móvil */}
+                {isMobile && (
                     <button
-                        onClick={handleLogout}
+                        onClick={() => setSidebarOpen(false)}
+                        style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}
+                        aria-label="Cerrar menú"
+                    >
+                        <X size={22} />
+                    </button>
+                )}
+            </div>
+
+            {/* Nav links */}
+            <nav style={{ flex: 1, padding: '1rem', overflowY: 'auto' }}>
+                {navItems.map((item) => (
+                    <Link
+                        key={item.path}
+                        to={item.path}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
-                            width: '100%',
                             padding: '0.75rem 1rem',
-                            color: '#ef4444',
-                            backgroundColor: 'transparent',
+                            marginBottom: '0.25rem',
                             borderRadius: '0.5rem',
+                            color: location.pathname === item.path ? 'white' : '#94a3b8',
+                            backgroundColor: location.pathname === item.path ? '#2563eb' : 'transparent',
+                            transition: 'all 0.2s',
                             fontSize: '0.875rem',
-                            transition: 'all 0.2s'
+                            WebkitTapHighlightColor: 'transparent',
                         }}
                     >
-                        <LogOut size={20} style={{ marginRight: '0.75rem' }} />
-                        Cerrar Sesión
-                    </button>
-                </div>
-            </aside>
+                        <item.icon size={20} style={{ marginRight: '0.75rem', flexShrink: 0 }} />
+                        {item.label}
+                    </Link>
+                ))}
+            </nav>
 
-            {/* Main Content */}
-            <main style={{ flex: 1, overflow: 'auto', backgroundColor: '#f1f5f9' }}>
+            <div style={{ padding: '1rem', borderTop: '1px solid #334155', fontSize: '0.75rem', color: '#94a3b8' }}>
+                Datos guardados en este dispositivo
+            </div>
+        </aside>
+    );
+
+    return (
+        <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+
+            {/* ── DESKTOP: sidebar siempre visible ── */}
+            {!isMobile && <SidebarContent />}
+
+            {/* ── MÓVIL: overlay + drawer ── */}
+            {isMobile && sidebarOpen && (
+                <>
+                    {/* Fondo oscuro */}
+                    <div
+                        onClick={() => setSidebarOpen(false)}
+                        style={{
+                            position: 'fixed', inset: 0, zIndex: 1000,
+                            backgroundColor: 'rgba(0,0,0,0.5)',
+                            backdropFilter: 'blur(2px)',
+                        }}
+                    />
+                    {/* Drawer */}
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 1001,
+                        display: 'flex',
+                    }}>
+                        <SidebarContent />
+                    </div>
+                </>
+            )}
+
+            {/* ── Main content ── */}
+            <main style={{
+                flex: 1,
+                overflow: 'auto',
+                backgroundColor: '#f1f5f9',
+                display: 'flex',
+                flexDirection: 'column',
+                // Deja espacio para barra inferior en móvil
+                paddingBottom: isMobile ? '64px' : 0,
+            }}>
+                {/* Header */}
                 <header style={{
                     backgroundColor: 'white',
-                    padding: '1rem 2rem',
+                    padding: isMobile ? '0.75rem 1rem' : '1rem 2rem',
                     borderBottom: '1px solid #e2e8f0',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    flexShrink: 0,
                 }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', margin: 0 }}>
-                        {navItems.find(i => location.pathname.startsWith(i.path))?.label || 'Vectra POS'}
-                    </h2>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        {/* Hamburger en móvil */}
+                        {isMobile && (
+                            <button
+                                onClick={() => setSidebarOpen(true)}
+                                style={{ background: 'none', border: 'none', color: '#1e293b', cursor: 'pointer', padding: '0.25rem', display: 'flex' }}
+                                aria-label="Abrir menú"
+                            >
+                                <Menu size={22} />
+                            </button>
+                        )}
+                        <h2 style={{ fontSize: isMobile ? '1rem' : '1.25rem', fontWeight: 600, color: '#1e293b', margin: 0 }}>
+                            {currentLabel}
+                        </h2>
+                    </div>
+                    {!isMobile && (
                         <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
                             {new Date().toLocaleDateString('es-VE', {
                                 weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
                             })}
                         </span>
-                    </div>
+                    )}
                 </header>
-                <div style={{ padding: '2rem' }}>
+
+                {/* Contenido de la página */}
+                <div style={{ flex: 1, padding: isMobile ? '1rem' : '2rem', overflow: 'auto' }}>
                     <Outlet />
                 </div>
             </main>
+
+            {/* ── MÓVIL: Barra de navegación inferior ── */}
+            {isMobile && (
+                <nav style={{
+                    position: 'fixed',
+                    bottom: 0, left: 0, right: 0,
+                    zIndex: 999,
+                    backgroundColor: 'white',
+                    borderTop: '1px solid #e2e8f0',
+                    display: 'flex',
+                    justifyContent: 'space-around',
+                    alignItems: 'stretch',
+                    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                    boxShadow: '0 -2px 10px rgba(0,0,0,0.08)',
+                }}>
+                    {bottomNavItems.map(item => {
+                        const active = location.pathname.startsWith(item.path);
+                        return (
+                            <Link
+                                key={item.path}
+                                to={item.path}
+                                style={{
+                                    flex: 1,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: '0.5rem 0.25rem',
+                                    color: active ? '#2563eb' : '#94a3b8',
+                                    textDecoration: 'none',
+                                    WebkitTapHighlightColor: 'transparent',
+                                    minHeight: '56px',
+                                }}
+                            >
+                                <item.icon size={22} />
+                                <span style={{ fontSize: '0.625rem', marginTop: '0.25rem', fontWeight: active ? 700 : 400 }}>
+                                    {item.label}
+                                </span>
+                            </Link>
+                        );
+                    })}
+                </nav>
+            )}
         </div>
     );
 };

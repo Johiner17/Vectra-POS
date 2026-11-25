@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { Link } from 'react-router-dom';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-    ResponsiveContainer, BarChart, Bar, Cell
+    ResponsiveContainer
 } from 'recharts';
-import { DollarSign, TrendingUp, Package, AlertTriangle, ShoppingCart, Clock, RefreshCw } from 'lucide-react';
+import { DollarSign, TrendingUp, Package, AlertTriangle, Clock, RefreshCw } from 'lucide-react';
+import { saleRepository } from '../services/saleRepository';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const StatCard = ({ title, value, subtitle, icon: Icon, color, loading }) => (
     <div style={{
@@ -47,6 +49,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const Dashboard = () => {
+    const isNarrow = useIsMobile(900);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [lastUpdate, setLastUpdate] = useState(null);
@@ -54,8 +57,8 @@ const Dashboard = () => {
     const fetchStats = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('/api/dashboard/stats');
-            setStats(res.data.data);
+            const data = await saleRepository.getDashboardStats();
+            setStats(data);
             setLastUpdate(new Date());
         } catch (error) {
             console.error('Error fetching dashboard stats:', error);
@@ -80,7 +83,7 @@ const Dashboard = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b' }}>Dashboard</h1>
                     <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
@@ -140,7 +143,7 @@ const Dashboard = () => {
             </div>
 
             {/* Gráfico + Top Productos */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '2fr 1fr', gap: '1.5rem' }}>
 
                 {/* Gráfico de ventas semanales */}
                 <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
@@ -218,9 +221,9 @@ const Dashboard = () => {
                         <Clock size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'middle' }} />
                         Últimas Ventas
                     </h3>
-                    <a href="/sales" style={{ fontSize: '0.8rem', color: '#2563eb', textDecoration: 'none', fontWeight: 500 }}>
+                    <Link to="/sales" style={{ fontSize: '0.8rem', color: '#2563eb', textDecoration: 'none', fontWeight: 500 }}>
                         Ver historial →
-                    </a>
+                    </Link>
                 </div>
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>

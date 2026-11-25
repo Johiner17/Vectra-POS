@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import { Plus, Edit2, ArrowRightLeft, History, Search, AlertTriangle } from 'lucide-react';
 import ProductModal from '../components/ProductModal';
 import StockAdjustmentModal from '../components/StockAdjustmentModal';
 import KardexModal from '../components/KardexModal';
+import { productRepository } from '../services/productRepository';
+import { currencyRepository } from '../services/currencyRepository';
 
 const Inventory = () => {
     const [products, setProducts] = useState([]);
@@ -38,17 +39,17 @@ const Inventory = () => {
 
     const fetchTasa = async () => {
         try {
-            const res = await axios.get('/api/currency/rate');
-            setTasaBcv(res.data.data.tasa || 0);
+            const latest = await currencyRepository.getLatestRate();
+            setTasaBcv(latest?.tasa || 0);
         } catch {
-            console.error('No se pudo obtener la tasa BCV');
+            console.error('No se pudo obtener la tasa BCV local');
         }
     };
 
     const fetchLowStock = async () => {
         try {
-            const res = await axios.get('/api/products/low-stock');
-            setLowStockProducts(res.data.data || []);
+            const items = await productRepository.getLowStock();
+            setLowStockProducts(items);
         } catch (error) {
             console.error('No se pudo obtener productos con stock bajo:', error);
         }
@@ -57,10 +58,8 @@ const Inventory = () => {
     const fetchProducts = async (query = '') => {
         setLoading(true);
         try {
-            // El token se agrega automáticamente por el interceptor de axiosConfig
-            const url = `/api/products/search?q=${query}`;
-            const res = await axios.get(url);
-            setProducts(res.data.data || []);
+            const items = await productRepository.search(query);
+            setProducts(items);
         } catch (error) {
             console.error(error);
         } finally {
@@ -112,7 +111,7 @@ const Inventory = () => {
 
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <h2>Gestión de Inventario</h2>
                 <button onClick={openNew} className="btn btn-primary">
                     <Plus size={20} style={{ marginRight: '0.5rem' }} /> Nuevo Producto
@@ -201,14 +200,14 @@ const Inventory = () => {
                 </form>
             </div>
 
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="card table-responsive" style={{ padding: 0 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                         <tr>
-                            <th style={{ padding: '1rem', textAlign: 'left' }}>Código</th>
+                            <th className="hide-mobile" style={{ padding: '1rem', textAlign: 'left' }}>Código</th>
                             <th style={{ padding: '1rem', textAlign: 'left' }}>Producto</th>
                             <th style={{ padding: '1rem', textAlign: 'right' }}>Precio (USD)</th>
-                            <th style={{ padding: '1rem', textAlign: 'right' }}>Precio (Bs.)</th>
+                            <th className="hide-mobile" style={{ padding: '1rem', textAlign: 'right' }}>Precio (Bs.)</th>
                             <th style={{ padding: '1rem', textAlign: 'right' }}>Stock</th>
                             <th style={{ padding: '1rem', textAlign: 'center' }}>Acciones</th>
                         </tr>
@@ -216,12 +215,12 @@ const Inventory = () => {
                     <tbody>
                         {getFilteredProducts().map(product => (
                             <tr key={product.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                <td style={{ padding: '1rem', color: '#64748b' }}>{product.codigo_barras}</td>
+                                <td className="hide-mobile" style={{ padding: '1rem', color: '#64748b' }}>{product.codigo_barras}</td>
                                 <td style={{ padding: '1rem', fontWeight: 500 }}>{product.nombre}</td>
-                                <td style={{ padding: '1rem', textAlign: 'right', color: '#2563eb' }}>
+                                <td style={{ padding: '1rem', textAlign: 'right', color: '#2563eb', whiteSpace: 'nowrap' }}>
                                     ${(product.precio_venta_usd_centavos / 100).toFixed(2)}
                                 </td>
-                                <td style={{ padding: '1rem', textAlign: 'right', color: '#16a34a' }}>
+                                <td className="hide-mobile" style={{ padding: '1rem', textAlign: 'right', color: '#16a34a', whiteSpace: 'nowrap' }}>
                                     {tasaBcv > 0
                                         ? `Bs. ${((product.precio_venta_usd_centavos / 100) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                                         : '—'

@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-    ResponsiveContainer, PieChart, Pie, Cell, Legend
+    ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 import { 
     DollarSign, TrendingUp, BarChart3, ArrowUpRight, 
     ArrowDownRight, RefreshCw, ShoppingBag, CreditCard, 
-    Inbox, AlertCircle 
+    Inbox
 } from 'lucide-react';
+import { saleRepository } from '../services/saleRepository';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const StatCard = ({ title, value, subtitle, icon: Icon, color, loading }) => (
     <div style={{
@@ -94,6 +95,7 @@ const PAYMENT_COLORS = {
 };
 
 const Reports = () => {
+    const isNarrow = useIsMobile(900);
     const [period, setPeriod] = useState('semana');
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -102,8 +104,8 @@ const Reports = () => {
     const fetchStats = async (selectedPeriod) => {
         setLoading(true);
         try {
-            const res = await axios.get(`/api/reports/stats?period=${selectedPeriod}`);
-            setData(res.data.data);
+            const reportData = await saleRepository.getReportStats(selectedPeriod);
+            setData(reportData);
         } catch (error) {
             console.error('Error al cargar datos de reportes:', error);
         } finally {
@@ -184,7 +186,9 @@ const Reports = () => {
                     backgroundColor: 'white',
                     padding: '0.25rem',
                     borderRadius: '0.75rem',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                    overflowX: 'auto',
+                    maxWidth: '100%'
                 }}>
                     {[
                         { id: 'dia', label: 'Hoy' },
@@ -250,7 +254,7 @@ const Reports = () => {
             </div>
 
             {/* Gráficos de Tendencia y Distribución de Pago */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', alignItems: 'stretch', flexWrap: 'wrap' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '2fr 1fr', gap: '1.5rem', alignItems: 'stretch' }}>
                 
                 {/* Gráfico de Tendencia */}
                 <div style={{ 
@@ -442,6 +446,8 @@ const Reports = () => {
                     {/* Selector de Pestaña */}
                     <div style={{ 
                         display: 'flex', 
+                        flexWrap: 'wrap',
+                        gap: '0.25rem',
                         backgroundColor: '#f1f5f9', 
                         padding: '0.2rem', 
                         borderRadius: '0.5rem' 

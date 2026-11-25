@@ -21,4 +21,26 @@ db.version(1).stores({
     settings: '&clave'
 });
 
+// v2: Permite productos sin código de barras (null/vacío) sin ConstraintError en IndexedDB;
+// la unicidad de códigos no vacíos se valida en productRepository.
+db.version(2).stores({
+    products: '++id, codigo_barras, nombre, activo',
+    exchangeRates: '++id, &fecha, fuente',
+    sales: '++id, &numero_factura, fecha_venta, estado, tasa_bcv_usada',
+    saleItems: '++id, venta_id, producto_id, nombre_producto',
+    payments: '++id, venta_id, tipo_pago, moneda',
+    settings: '&clave'
+});
+
+// v3: Tabla local de movimientos de inventario (Kardex)
+db.version(3).stores({
+    products: '++id, codigo_barras, nombre, activo',
+    exchangeRates: '++id, &fecha, fuente',
+    sales: '++id, &numero_factura, fecha_venta, estado, tasa_bcv_usada',
+    saleItems: '++id, venta_id, producto_id, nombre_producto',
+    payments: '++id, venta_id, tipo_pago, moneda',
+    settings: '&clave',
+    inventoryMovements: '++id, producto_id, tipo_movimiento, fecha_movimiento'
+});
+
 export default db;

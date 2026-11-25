@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { RefreshCw, Wifi, WifiOff, CheckCircle, AlertCircle, Clock, Edit3, Save, X, TrendingUp, History } from 'lucide-react';
+import { RefreshCw, WifiOff, CheckCircle, AlertCircle, Clock, Edit3, Save, X, TrendingUp, History } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer
 } from 'recharts';
+import { currencyRepository } from '../services/currencyRepository';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const STATUS_CONFIG = {
     success: { color: '#16a34a', bg: '#f0fdf4', icon: CheckCircle, label: 'Actualizado automáticamente' },
@@ -15,6 +16,7 @@ const STATUS_CONFIG = {
 };
 
 const CurrencyPage = () => {
+    const isNarrow = useIsMobile(900);
     const [rateData, setRateData] = useState(null);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -24,14 +26,15 @@ const CurrencyPage = () => {
 
     const fetchRateData = async () => {
         try {
-            const [rateRes, histRes] = await Promise.all([
-                axios.get('/api/currency/rate'),
-                axios.get('/api/currency/history')
+            const [latest, hist] = await Promise.all([
+                currencyRepository.getLatestRate(),
+                currencyRepository.getHistory()
             ]);
-            setRateData(rateRes.data.data);
-            setHistory(histRes.data.data || []);
+            setRateData(latest);
+            setHistory(hist || []);
         } catch (error) {
-            toast.error('Error cargando datos de tasa');
+            console.error(error);
+            toast.error('Error cargando datos de tasa local');
         } finally {
             setLoading(false);
         }
@@ -39,23 +42,23 @@ const CurrencyPage = () => {
 
     useEffect(() => {
         fetchRateData();
-        // Polling each 15 segundos para reflejar cuando el sync automático termina
-        const interval = setInterval(fetchRateData, 15000);
-        return () => clearInterval(interval);
     }, []);
 
     const handleSyncNow = async () => {
         setSyncing(true);
         try {
-            await axios.post('/api/currency/sync');
-            toast.success('Sincronización iniciada...', { icon: '🔄' });
-            // Esperar 6 segundos y recargar (tiempo para que las fuentes respondan)
-            setTimeout(() => {
-                fetchRateData();
-                setSyncing(false);
-            }, 6000);
+            const result = await currencyRepository.syncFromOnline();
+            await fetchRateData();
+            if (result.synced) {
+                toast.success(`Tasa BCV actualizada: Bs. ${result.rate.tasa.toFixed(2)}`);
+            } else if (result.offline) {
+                toast.error('Sin conexión a Internet. Se mantiene la última tasa guardada.');
+            } else {
+                toast.error('No se pudo consultar la tasa online. Puedes ingresarla manualmente.');
+            }
         } catch (error) {
-            toast.error('Error al iniciar sincronización');
+            toast.error('Error al sincronizar la tasa');
+        } finally {
             setSyncing(false);
         }
     };
@@ -67,13 +70,13 @@ const CurrencyPage = () => {
             return;
         }
         try {
-            await axios.post('/api/currency/rate', { tasa });
+            await currencyRepository.saveRate({ tasa, fuente: 'Manual' });
             toast.success(`Tasa actualizada: Bs. ${tasa.toFixed(2)}`);
             setEditMode(false);
             setManualRate('');
             fetchRateData();
         } catch (error) {
-            toast.error('Error guardando la tasa');
+            toast.error(error.message || 'Error guardando la tasa');
         }
     };
 
@@ -86,13 +89,13 @@ const CurrencyPage = () => {
         .reverse()
         .slice(-14)
         .map(r => ({
-            fecha: new Date(r.fecha).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit' }),
+            fecha: new Date(r.fecha + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit' }),
             tasa: parseFloat(r.tasa),
             fuente: r.fuente
         }));
 
-    const minTasa = Math.min(...chartData.map(d => d.tasa)) * 0.998;
-    const maxTasa = Math.max(...chartData.map(d => d.tasa)) * 1.002;
+    const minTasa = chartData.length > 0 ? Math.min(...chartData.map(d => d.tasa)) * 0.998 : 0;
+    const maxTasa = chartData.length > 0 ? Math.max(...chartData.map(d => d.tasa)) * 1.002 : 100;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -106,10 +109,10 @@ const CurrencyPage = () => {
             </div>
 
             {/* Tasa actual + controles */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
 
                 {/* Card tasa actual */}
-                <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: 'clamp(1.25rem, 3vw, 2rem)', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                         <div>
                             <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -208,7 +211,7 @@ const CurrencyPage = () => {
                 </div>
 
                 {/* Card estado de sincronización */}
-                <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: 'clamp(1.25rem, 3vw, 2rem)', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                     <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1.5rem' }}>
                         Estado de Sincronización
                     </p>
@@ -243,14 +246,14 @@ const CurrencyPage = () => {
                         <InfoRow
                             icon="🟡"
                             active={true}
-                            title="Auto-sync al iniciar"
-                            desc="Al arrancar el servidor intenta actualizar la tasa"
+                            title="Consulta directa BCV"
+                            desc="Si hay internet, puedes sincronizar la tasa oficial al instante"
                         />
                         <InfoRow
                             icon="🟢"
                             active={true}
-                            title="Sync cada 6 horas"
-                            desc="Si hay internet, la tasa se actualiza automáticamente"
+                            title="Tasa congelada por venta"
+                            desc="Cada venta guarda la tasa usada para no alterar el historial"
                         />
                         <InfoRow
                             icon="✏️"
@@ -294,7 +297,7 @@ const CurrencyPage = () => {
             )}
 
             {/* Tabla histórica */}
-            <div style={{ backgroundColor: 'white', borderRadius: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+            <div className="table-responsive" style={{ backgroundColor: 'white', borderRadius: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9' }}>
                     <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>Historial de Tasas</h3>
                 </div>

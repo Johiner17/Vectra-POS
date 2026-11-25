@@ -20,6 +20,8 @@ body {
   background-color: var(--background-color);
   color: var(--text-primary);
   line-height: 1.5;
+  /* Evita rebote en iOS */
+  overscroll-behavior: none;
 }
 
 a {
@@ -27,13 +29,18 @@ a {
   color: inherit;
 }
 
-button {
+button, a {
   cursor: pointer;
-  border: none;
   font-family: inherit;
+  /* Sin resaltado azul en tap móvil */
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Utilities */
+button {
+  border: none;
+}
+
+/* ─── Utilidades ─── */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -64,4 +71,32 @@ button {
 
 .btn-primary:hover {
   filter: brightness(0.9);
+}
+
+/* ─── Responsive mobile helpers ─── */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  /* Tablas horizontalmente scrollables en móvil */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Safe area para barra inferior en iPhone con notch */
+.bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Scroll suave en iOS dentro de contenedores */
+.scroll-y {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }

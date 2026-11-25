@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, DollarSign, CreditCard, Banknote, Check, Plus, Trash2, Layers } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { saleRepository } from '../services/saleRepository';
 
 const PAYMENT_METHODS = [
     { id: 'efectivo_usd', label: 'Efectivo USD', moneda: 'USD', icon: DollarSign, color: '#16a34a' },
@@ -133,7 +135,6 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
     const handleConfirmarPago = async () => {
         setProcessing(true);
         try {
-            const token = localStorage.getItem('token');
             let pagos = [];
 
             if (isMixto) {
@@ -163,32 +164,21 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                 }];
             }
 
-            const payload = {
+            const saleData = await saleRepository.processSale({
                 items: cart.map(item => ({
                     producto_id: item.id,
                     cantidad: item.quantity
                 })),
                 moneda_venta: isMixto ? 'USD' : method.moneda,
-                pagos
-            };
-
-            const res = await fetch('/api/sales', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
+                pagos,
+                tasa_bcv_usada: tasaBcv
             });
 
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Error procesando venta');
-
-            setSaleResult(data.data);
-            onSuccess(data.data);
+            setSaleResult(saleData);
+            onSuccess(saleData);
         } catch (error) {
             console.error(error);
-            alert(error.message || 'Error al procesar el pago');
+            toast.error(error.message || 'Error al procesar el pago');
         } finally {
             setProcessing(false);
         }
@@ -267,7 +257,7 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
     return (
         <div style={overlayStyle}>
             <style>{scrollbarStyles}</style>
-            <div style={{ ...modalWrapperStyle, maxWidth: '480px' }}>
+            <div style={{ ...modalWrapperStyle, maxWidth: 'min(480px, calc(100vw - 1.5rem))' }}>
                 <div className="custom-scrollbar" style={modalStyle}>
                     {/* Header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -560,13 +550,13 @@ const modalWrapperStyle = {
     borderRadius: '1rem',
     boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
     overflow: 'hidden',
-    width: '100%'
+    width: 'calc(100vw - 1.5rem)'
 };
 
 const modalStyle = {
-    padding: '2rem',
+    padding: 'clamp(1.25rem, 4vw, 2rem)',
     width: '100%',
-    maxHeight: '90vh',
+    maxHeight: '90dvh',
     overflowY: 'auto'
 };
 

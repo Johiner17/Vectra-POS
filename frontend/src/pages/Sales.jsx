@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
-import { Search, Eye, X, ChevronDown } from 'lucide-react';
+import { Search, Eye, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { saleRepository } from '../services/saleRepository';
 
 // ─── Modal de detalle de venta ───────────────────────────────────────────────
 const SaleDetailModal = ({ sale, onClose }) => {
@@ -15,7 +15,7 @@ const SaleDetailModal = ({ sale, onClose }) => {
         }}>
             <div style={{
                 backgroundColor: 'white', borderRadius: '1rem', boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
-                width: '100%', maxWidth: '580px', maxHeight: '85vh', overflow: 'hidden',
+                width: 'calc(100vw - 1.5rem)', maxWidth: '580px', maxHeight: '90dvh', overflow: 'hidden',
                 display: 'flex', flexDirection: 'column'
             }}>
                 {/* Header */}
@@ -121,33 +121,34 @@ const Sales = () => {
         fechaFin: '',
         search: ''
     });
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(false);
 
-    const fetchSales = useCallback(async (reset = false) => {
+    const fetchSales = useCallback(async () => {
         setLoading(true);
         try {
-            const params = new URLSearchParams({ limit: 20, offset: reset ? 0 : (page - 1) * 20 });
-            if (filters.fechaInicio) params.append('fecha_inicio', filters.fechaInicio);
-            if (filters.fechaFin) params.append('fecha_fin', filters.fechaFin);
-            const res = await axios.get(`/api/sales?${params}`);
-            const data = res.data.data || [];
+            const data = await saleRepository.getSales({
+                fechaInicio: filters.fechaInicio,
+                fechaFin: filters.fechaFin,
+            });
             setSales(data);
-            setHasMore(data.length === 20);
         } catch (error) {
+            console.error(error);
             toast.error('Error cargando historial de ventas');
         } finally {
             setLoading(false);
         }
-    }, [filters, page]);
+    }, [filters.fechaInicio, filters.fechaFin]);
 
-    useEffect(() => { fetchSales(true); }, [filters]);
+    useEffect(() => { fetchSales(); }, [fetchSales]);
 
     const openDetail = async (saleId) => {
         setDetailLoading(true);
         try {
-            const res = await axios.get(`/api/sales/${saleId}`);
-            setSelectedSale(res.data.data);
+            const detail = await saleRepository.getSaleById(saleId);
+            if (!detail) {
+                toast.error('Venta no encontrada');
+                return;
+            }
+            setSelectedSale(detail);
         } catch {
             toast.error('Error cargando detalle de venta');
         } finally {
@@ -155,9 +156,12 @@ const Sales = () => {
         }
     };
 
-    // Filtro por búsqueda local (número de factura)
+    // Filtro por búsqueda local (número de factura o cajero)
     const filteredSales = filters.search
-        ? sales.filter(s => s.numero_factura?.includes(filters.search) || s.username?.includes(filters.search))
+        ? sales.filter(s =>
+            s.numero_factura?.toLowerCase().includes(filters.search.toLowerCase()) ||
+            (s.cajero || s.username || '').toLowerCase().includes(filters.search.toLowerCase())
+        )
         : sales;
 
     const totalUsd = filteredSales.reduce((a, s) => a + (s.total_usd_centavos / 100), 0);
@@ -225,17 +229,26 @@ const Sales = () => {
             )}
 
             {/* Tabla */}
-            <div style={{ backgroundColor: 'white', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+            <div className="table-responsive" style={{ backgroundColor: 'white', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead style={{ backgroundColor: '#f8fafc' }}>
                         <tr>
-                            {['# Factura', 'Fecha', 'Cajero', 'Items', 'Total USD', 'Total Bs.', 'Método', ''].map(h => (
-                                <th key={h} style={{
+                            {[
+                                { label: '# Factura', hideMobile: false },
+                                { label: 'Fecha', hideMobile: false },
+                                { label: 'Cajero', hideMobile: true },
+                                { label: 'Items', hideMobile: true },
+                                { label: 'Total USD', hideMobile: false },
+                                { label: 'Total Bs.', hideMobile: true },
+                                { label: 'Método', hideMobile: true },
+                                { label: '', hideMobile: false },
+                            ].map((h, idx) => (
+                                <th key={idx} className={h.hideMobile ? 'hide-mobile' : ''} style={{
                                     textAlign: 'left', padding: '0.875rem 1rem',
                                     fontSize: '0.75rem', fontWeight: 600, color: '#64748b',
                                     borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap'
                                 }}>
-                                    {h}
+                                    {h.label}
                                 </th>
                             ))}
                         </tr>
@@ -275,19 +288,19 @@ const Sales = () => {
                                         hour: '2-digit', minute: '2-digit'
                                     })}
                                 </td>
-                                <td style={{ padding: '0.875rem 1rem', fontSize: '0.85rem', color: '#374151' }}>
-                                    {sale.username || 'admin'}
+                                <td className="hide-mobile" style={{ padding: '0.875rem 1rem', fontSize: '0.85rem', color: '#374151' }}>
+                                    {sale.cajero || sale.username || 'Local'}
                                 </td>
-                                <td style={{ padding: '0.875rem 1rem', fontSize: '0.85rem', color: '#64748b', textAlign: 'center' }}>
-                                    —
+                                <td className="hide-mobile" style={{ padding: '0.875rem 1rem', fontSize: '0.85rem', color: '#64748b', textAlign: 'center' }}>
+                                    {sale.items_count || '—'}
                                 </td>
-                                <td style={{ padding: '0.875rem 1rem', fontWeight: 700, color: '#1e293b', fontSize: '0.9rem' }}>
+                                <td style={{ padding: '0.875rem 1rem', fontWeight: 700, color: '#1e293b', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
                                     ${(sale.total_usd_centavos / 100).toFixed(2)}
                                 </td>
-                                <td style={{ padding: '0.875rem 1rem', fontSize: '0.85rem', color: '#64748b' }}>
+                                <td className="hide-mobile" style={{ padding: '0.875rem 1rem', fontSize: '0.85rem', color: '#64748b', whiteSpace: 'nowrap' }}>
                                     Bs. {(sale.total_bs_centavos / 100).toFixed(2)}
                                 </td>
-                                <td style={{ padding: '0.875rem 1rem' }}>
+                                <td className="hide-mobile" style={{ padding: '0.875rem 1rem' }}>
                                     <span style={{
                                         fontSize: '0.7rem', padding: '0.2rem 0.5rem',
                                         borderRadius: '999px', fontWeight: 500,
