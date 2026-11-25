@@ -162,8 +162,8 @@ export function verifyLicenseCode(businessName, rawCode) {
 export const licenseService = {
     async getSavedLicense() {
         const row = await db.settings.get(LICENSE_STORAGE_KEY);
-        if (!row?.value) return null;
-        const { businessName, code } = row.value;
+        if (!row?.valor) return null;
+        const { businessName, code } = row.valor;
         const check = verifyLicenseCode(businessName, code);
         return {
             businessName,
@@ -182,12 +182,13 @@ export const licenseService = {
         const cleanCode = String(code).trim().toUpperCase();
 
         await db.settings.put({
-            key: LICENSE_STORAGE_KEY,
-            value: {
+            clave: LICENSE_STORAGE_KEY,
+            valor: {
                 businessName: cleanName,
                 code: cleanCode,
                 activatedAt: new Date().toISOString(),
             },
+            updated_at: new Date().toISOString(),
         });
 
         // Sincronizar el nombre del negocio en la configuración de la app
