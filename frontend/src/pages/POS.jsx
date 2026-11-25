@@ -293,7 +293,10 @@ const POS = () => {
                     )}
                 </div>
                 <button
-                    onClick={() => setIsCheckoutOpen(true)}
+                    onClick={() => {
+                        setIsMobileCartOpen(false);
+                        setIsCheckoutOpen(true);
+                    }}
                     disabled={cart.length === 0}
                     style={{
                         width: '100%', padding: '1rem',
