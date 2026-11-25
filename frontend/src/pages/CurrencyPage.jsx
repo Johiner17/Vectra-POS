@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { currencyRepository } from '../services/currencyRepository';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { formatBs } from '../utils/formatters';
 
 const STATUS_CONFIG = {
     success: { color: '#16a34a', bg: '#f0fdf4', icon: CheckCircle, label: 'Actualizado automáticamente' },
@@ -141,7 +142,7 @@ const CurrencyPage = () => {
                             ) : (
                                 <div style={{ marginTop: '0.5rem' }}>
                                     <span style={{ fontSize: '3rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>
-                                        Bs. {rateData?.tasa?.toFixed(2) || '—'}
+                                        Bs. {rateData?.tasa ? formatBs(rateData.tasa) : '—'}
                                     </span>
                                     <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.25rem' }}>
                                         1 USD = Bs. {rateData?.tasa?.toFixed(4) || '—'}

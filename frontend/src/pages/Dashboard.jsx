@@ -7,6 +7,7 @@ import {
 import { DollarSign, TrendingUp, Package, AlertTriangle, Clock, RefreshCw } from 'lucide-react';
 import { saleRepository } from '../services/saleRepository';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { formatBs } from '../utils/formatters';
 
 const StatCard = ({ title, value, subtitle, icon: Icon, color, loading }) => (
     <div style={{
@@ -118,7 +119,7 @@ const Dashboard = () => {
                 />
                 <StatCard
                     title="Tasa BCV"
-                    value={stats ? `Bs. ${stats.rate.toFixed(2)}` : 'Bs. 0.00'}
+                    value={stats ? `Bs. ${formatBs(stats.rate)}` : 'Bs. 0,00'}
                     subtitle="Tasa actual"
                     icon={TrendingUp}
                     color="#16a34a"
@@ -263,7 +264,7 @@ const Dashboard = () => {
                                             ${sale.total_usd.toFixed(2)}
                                         </td>
                                         <td style={{ padding: '0.75rem', fontSize: '0.85rem', color: '#64748b' }}>
-                                            Bs. {sale.total_bs.toFixed(2)}
+                                            Bs. {formatBs(sale.total_bs)}
                                         </td>
                                         <td style={{ padding: '0.75rem', fontSize: '0.8rem', color: '#94a3b8' }}>
                                             {new Date(sale.fecha_venta).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}

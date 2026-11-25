@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Eye, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { saleRepository } from '../services/saleRepository';
+import { formatBs } from '../utils/formatters';
 
 // ─── Modal de detalle de venta ───────────────────────────────────────────────
 const SaleDetailModal = ({ sale, onClose }) => {
@@ -71,7 +72,7 @@ const SaleDetailModal = ({ sale, onClose }) => {
                                                 {p.tipo_pago?.replace(/_/g, ' ')}
                                             </span>
                                             <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                                                {p.moneda === 'BS' ? 'Bs.' : '$'} {(p.monto_centavos / 100).toFixed(2)}
+                                                {p.moneda === 'BS' ? `Bs. ${formatBs(p.monto_centavos / 100)}` : `$ ${(p.monto_centavos / 100).toFixed(2)}`}
                                             </span>
                                         </div>
                                         {p.referencia && (
@@ -100,8 +101,8 @@ const SaleDetailModal = ({ sale, onClose }) => {
                             <strong style={{ fontSize: '1rem', color: '#2563eb' }}>${(sale.total_usd_centavos / 100).toFixed(2)}</strong>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem', fontSize: '0.8rem', color: '#94a3b8' }}>
-                            <span>Total Bs. (×{sale.tasa_bcv_usada?.toFixed(2)}):</span>
-                            <span>Bs. {(sale.total_bs_centavos / 100).toFixed(2)}</span>
+                            <span>Total Bs. (×{formatBs(sale.tasa_bcv_usada)}):</span>
+                            <span>Bs. {formatBs(sale.total_bs_centavos / 100)}</span>
                         </div>
                     </div>
                 </div>
@@ -298,7 +299,7 @@ const Sales = () => {
                                     ${(sale.total_usd_centavos / 100).toFixed(2)}
                                 </td>
                                 <td className="hide-mobile" style={{ padding: '0.875rem 1rem', fontSize: '0.85rem', color: '#64748b', whiteSpace: 'nowrap' }}>
-                                    Bs. {(sale.total_bs_centavos / 100).toFixed(2)}
+                                    Bs. {formatBs(sale.total_bs_centavos / 100)}
                                 </td>
                                 <td className="hide-mobile" style={{ padding: '0.875rem 1rem' }}>
                                     <span style={{

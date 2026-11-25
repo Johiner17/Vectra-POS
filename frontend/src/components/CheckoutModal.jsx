@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, DollarSign, CreditCard, Banknote, Check, Plus, Trash2, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { saleRepository } from '../services/saleRepository';
+import { formatBs } from '../utils/formatters';
 
 const PAYMENT_METHODS = [
     { id: 'efectivo_usd', label: 'Efectivo USD', moneda: 'USD', icon: DollarSign, color: '#16a34a' },
@@ -208,12 +209,12 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                             </div>
                             <div style={rowStyle}>
                                 <span>Total Bs.:</span>
-                                <strong>Bs. {(saleResult.total_bs_centavos / 100).toFixed(2)}</strong>
+                                <strong>Bs. {formatBs(saleResult.total_bs_centavos / 100)}</strong>
                             </div>
                             {!isMixto && parseFloat(montoRecibido) > 0 && vuelto > 0 && (
                                 <div style={{ ...rowStyle, color: '#16a34a', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #e2e8f0' }}>
-                                    <span>Monto recibido ({isBs ? 'Bs.' : 'USD'}):</span>
-                                    <strong>{isBs ? 'Bs.' : '$'} {vuelto.toFixed(2)}</strong>
+                                    <span>Vuelto ({isBs ? 'Bs.' : 'USD'}):</span>
+                                    <strong>{isBs ? `Bs. ${formatBs(vuelto)}` : `$ ${vuelto.toFixed(2)}`}</strong>
                                 </div>
                             )}
                         </div>
@@ -271,7 +272,7 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                     <div style={{ backgroundColor: '#1e293b', borderRadius: '0.75rem', padding: '1.25rem', marginBottom: '1.5rem', textAlign: 'center' }}>
                         <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Total a Cobrar</p>
                         <p style={{ color: 'white', fontSize: '2rem', fontWeight: 700 }}>$ {totalUsd.toFixed(2)}</p>
-                        <p style={{ color: '#94a3b8', fontSize: '1.25rem' }}>Bs. {totalBs.toFixed(2)}</p>
+                        <p style={{ color: '#94a3b8', fontSize: '1.25rem' }}>Bs. {formatBs(totalBs)}</p>
                     </div>
 
                     {/* Payment method selector */}
@@ -342,14 +343,14 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginTop: '0.5rem', padding: '0.5rem 0.75rem', backgroundColor: '#fef2f2', borderRadius: '0.5rem', border: '1px solid #fecaca' }}>
                                         <span style={{ fontSize: '1rem' }}>⚠️</span>
                                         <p style={{ color: '#dc2626', fontSize: '0.82rem', fontWeight: 600, margin: 0 }}>
-                                            Monto insuficiente — faltan <strong>{isBs ? 'Bs.' : '$'} {faltante.toFixed(2)}</strong>
+                                            Monto insuficiente — faltan <strong>{isBs ? `Bs. ${formatBs(faltante)}` : `$ ${faltante.toFixed(2)}`}</strong>
                                         </p>
                                     </div>
                                 )}
                                 {vuelto > 0 && !esPagoInsuficiente && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginTop: '0.5rem', padding: '0.5rem 0.75rem', backgroundColor: '#f0fdf4', borderRadius: '0.5rem', border: '1px solid #bbf7d0' }}>
                                         <p style={{ color: '#16a34a', fontWeight: 600, fontSize: '1.125rem', margin: 0 }}>
-                                            Vuelto: <strong>{isBs ? 'Bs.' : '$'} {vuelto.toFixed(2)}</strong>
+                                            Vuelto: <strong>{isBs ? `Bs. ${formatBs(vuelto)}` : `$ ${vuelto.toFixed(2)}`}</strong>
                                         </p>
                                     </div>
                                 )}
@@ -392,7 +393,7 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                                             $ {mixtoRestanteUsd.toFixed(2)}
                                         </span>
                                         <span style={{ fontSize: '0.8rem', color: '#b45309', marginLeft: '0.5rem' }}>
-                                            / Bs. {(mixtoRestanteUsd * tasaBcv).toFixed(2)}
+                                            / Bs. {formatBs(mixtoRestanteUsd * tasaBcv)}
                                         </span>
                                     </div>
                                 )}
@@ -463,7 +464,7 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                                             {/* Remaining hint */}
                                             {remaining > 0 && !payment.monto && (
                                                 <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.25rem', textAlign: 'right' }}>
-                                                    Sugerido: {pm?.moneda === 'BS' ? 'Bs.' : '$'} {remaining.toFixed(2)}
+                                                    Sugerido: {pm?.moneda === 'BS' ? `Bs. ${formatBs(remaining)}` : `$ ${remaining.toFixed(2)}`}
                                                 </p>
                                             )}
 
@@ -528,7 +529,7 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                             : isMixto
                                 ? (mixtoCubierto ? 'Confirmar Pago Mixto' : `Faltan $ ${mixtoRestanteUsd.toFixed(2)}`)
                                 : esPagoInsuficiente
-                                    ? `Faltan ${isBs ? 'Bs.' : '$'} ${faltante.toFixed(2)}`
+                                    ? `Faltan ${isBs ? `Bs. ${formatBs(faltante)}` : `$ ${faltante.toFixed(2)}`}`
                                     : 'Confirmar Pago'
                         }
                     </button>

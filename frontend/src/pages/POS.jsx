@@ -5,6 +5,7 @@ import CheckoutModal from '../components/CheckoutModal';
 import { productRepository } from '../services/productRepository';
 import { currencyRepository } from '../services/currencyRepository';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { formatBs } from '../utils/formatters';
 
 const POS = () => {
     const isMobile = useIsMobile(768);
@@ -287,8 +288,8 @@ const POS = () => {
                     </div>
                     {tasaBcv > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.25rem' }}>
-                            <span>Total Bs. (×{tasaBcv.toFixed(2)}):</span>
-                            <span>Bs. {(total * tasaBcv).toFixed(2)}</span>
+                            <span>Total Bs. (×{formatBs(tasaBcv)}):</span>
+                            <span>Bs. {formatBs(total * tasaBcv)}</span>
                         </div>
                     )}
                 </div>
@@ -456,7 +457,7 @@ const POS = () => {
                         <span>${total.toFixed(2)}</span>
                         {tasaBcv > 0 && (
                             <span style={{ fontSize: '0.75rem', opacity: 0.9, marginLeft: '0.5rem', fontWeight: 500 }}>
-                                · Bs. {(total * tasaBcv).toFixed(2)}
+                                · Bs. {formatBs(total * tasaBcv)}
                             </span>
                         )}
                     </div>
