@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generador de Licencias — Vectra POS (Uso Interno)</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      margin: 0; min-height: 100vh;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      display: flex; align-items: center; justify-content: center; padding: 1.25rem;
+    }
+    .card {
+      width: 100%; max-width: 440px; background: #fff; border-radius: 1rem;
+      padding: 2rem; box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+    }
+    h1 { margin: 0 0 0.25rem; font-size: 1.35rem; color: #0f172a; }
+    p.sub { margin: 0 0 1.5rem; font-size: 0.85rem; color: #64748b; }
+    label { display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem; }
+    input, select {
+      width: 100%; padding: 0.7rem; border: 1.5px solid #cbd5e1; border-radius: 0.5rem;
+      font-size: 0.95rem; margin-bottom: 1rem;
+    }
+    button {
+      width: 100%; padding: 0.85rem; border: none; border-radius: 0.65rem;
+      background: #2563eb; color: #fff; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+    }
+    button:hover { background: #1d4ed8; }
+    .result {
+      margin-top: 1.25rem; padding: 1rem; border-radius: 0.75rem;
+      background: #f0fdf4; border: 1px solid #bbf7d0; display: none;
+    }
+    .code {
+      font-family: monospace; font-size: 1.15rem; font-weight: 800;
+      color: #166534; word-break: break-all; margin: 0.4rem 0;
+    }
+    .copy-btn { background: #16a34a; margin-top: 0.5rem; padding: 0.5rem; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Generador de Licencias</h1>
+    <p class="sub">Uso exclusivo del administrador de Vectra POS (no subir a internet)</p>
+
+    <label for="biz">Nombre exacto del negocio</label>
+    <input id="biz" type="text" placeholder="Ej: Puesto de Sopas El Sabor" />
+
+    <label for="tipo">Vigencia</label>
+    <select id="tipo" onchange="toggleFecha()">
+      <option value="PERM">Permanente (sin vencimiento)</option>
+      <option value="DATE">Con fecha de vencimiento</option>
+    </select>
+
+    <div id="fechaBox" style="display:none;">
+      <label for="fecha">Vence el:</label>
+      <input id="fecha" type="date" />
+    </div>
+
+    <button onclick="generar()">Generar Código</button>
+
+    <div id="result" class="result">
+      <div style="font-size:0.8rem;color:#15803d;font-weight:600;">Credenciales para enviar al cliente:</div>
+      <div id="resBiz" style="font-size:0.85rem;color:#334155;margin-top:0.35rem;"></div>
+      <div id="resCode" class="code"></div>
+      <button class="copy-btn" onclick="copiar()">Copiar mensaje para WhatsApp</button>
+    </div>
+  </div>
+
+  <script>
+    const LICENSE_SECRET = 'VECTRA-POS-VE-2026-SOPA-KEY-94F2';
+
+    function toggleFecha() {
+      document.getElementById('fechaBox').style.display =
+        document.getElementById('tipo').value === 'DATE' ? 'block' : 'none';
+    }
+
+    function normalizeBusinessName(name) {
+      return String(name || '')
+        .trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ');
+    }
+
+    function sha256Hex(ascii) {
+      const rightRotate = (value, amount) => (value >>> amount) | (value << (32 - amount));
+      const maxWord = Math.pow(2, 32);
+      let result = '';
+      const words = [], hash = [], k = [], isComposite = {};
+      let primeCounter = 0;
+      for (let candidate = 2; primeCounter < 64; candidate++) {
+        if (!isComposite[candidate]) {
+          for (let i = 0; i < 313; i += candidate) isComposite[i] = candidate;
+          hash[primeCounter] = (Math.pow(candidate, 0.5) * maxWord) | 0;
+          k[primeCounter++] = (Math.pow(candidate, 1 / 3) * maxWord) | 0;
+        }
+      }
+      const asciiBitLength = ascii.length * 8;
+      ascii += '\x80';
+      while ((ascii.length % 64) - 56) ascii += '\x00';
+      for (let i = 0; i < ascii.length; i++) {
+        const j = ascii.charCodeAt(i);
+        if (j >> 8) return '';
+        words[i >> 2] |= j << (((3 - i) % 4) * 8);
+      }
+      words[words.length] = (asciiBitLength / maxWord) | 0;
+      words[words.length] = asciiBitLength;
+
+      for (let j = 0; j < words.length;) {
+        const w = words.slice(j, (j += 16));
+        const oldHash = hash.slice(0);
+        for (let i = 0; i < 64; i++) {
+          const w15 = w[i - 15], w2 = w[i - 2];
+          const a = hash[0], e = hash[4];
+          const temp1 = hash[7] +
+            (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) +
+            ((e & hash[5]) ^ (~e & hash[6])) + k[i] +
+            (w[i] = i < 16 ? w[i] : (w[i - 16] +
+              (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) +
+              w[i - 7] +
+              (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) | 0);
+          const temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) +
+            ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+          hash[7] = hash[6]; hash[6] = hash[5]; hash[5] = hash[4];
+          hash[4] = (hash[3] + temp1) | 0;
+          hash[3] = hash[2]; hash[2] = hash[1]; hash[1] = hash[0];
+          hash[0] = (temp1 + temp2) | 0;
+        }
+        for (let i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
+      }
+      for (let i = 0; i < 8; i++) {
+        for (let j = 3; j + 1; j--) {
+          const b = (hash[i] >> (j * 8)) & 255;
+          result += (b < 16 ? '0' : '') + b.toString(16);
+        }
+      }
+      return result;
+    }
+
+    let lastMsg = '';
+    function generar() {
+      const biz = document.getElementById('biz').value.trim();
+      if (!biz) return alert('Escribe el nombre del negocio');
+      const tipo = document.getElementById('tipo').value;
+      let expPart = 'PERM';
+      if (tipo === 'DATE') {
+        const f = document.getElementById('fecha').value;
+        if (!f) return alert('Selecciona la fecha de vencimiento');
+        expPart = f.replace(/-/g, '');
+      }
+      const norm = normalizeBusinessName(biz);
+      const payload = unescape(encodeURIComponent(`${norm}|${expPart}|${LICENSE_SECRET}`));
+      const sig = sha256Hex(payload).slice(0, 8).toUpperCase();
+      const code = `VPOS-${expPart}-${sig}`;
+
+      document.getElementById('resBiz').textContent = `Negocio: ${biz}`;
+      document.getElementById('resCode').textContent = code;
+      document.getElementById('result').style.display = 'block';
+
+      lastMsg = `🔐 *Acceso a Vectra POS*\nNegocio: *${biz}*\nCódigo: \`${code}\``;
+    }
+
+    function copiar() {
+      navigator.clipboard.writeText(lastMsg).then(() => alert('¡Copiado al portapapeles!'));
+    }
+  </script>
+</body>
+</html>
