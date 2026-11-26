@@ -87,8 +87,8 @@ const Layout = () => {
                             <Store size={14} color="#fff" />
                         </div>
                         <div>
-                            <p style={{ fontSize: '0.8125rem', color: '#e2e8f0', margin: 0 }}>Modo Local</p>
-                            <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: 0 }}>Offline-First PWA</p>
+                            <p style={{ fontSize: '0.8125rem', color: '#e2e8f0', margin: 0, fontWeight: 600 }}>Vectra POS</p>
+                            <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: 0 }}>Punto de Venta</p>
                         </div>
                     </div>
                 </div>
