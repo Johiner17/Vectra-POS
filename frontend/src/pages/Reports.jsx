@@ -61,7 +61,7 @@ const PAYMENT_COLORS = {
 
 const Reports = () => {
     const isNarrow = useIsMobile(900);
-    const [period, setPeriod] = useState('semana');
+    const [period, setPeriod] = useState('dia');
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('mas_vendidos'); // 'mas_vendidos' | 'menos_vendidos'
