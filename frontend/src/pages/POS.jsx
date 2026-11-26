@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, Minus, Trash2, ShoppingCart, X, Package, Tag, Coffee, Box, Star, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingCart, X, Package, Tag, Coffee, Box, Star, AlertTriangle, Clock, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CheckoutModal from '../components/CheckoutModal';
 import { productRepository } from '../services/productRepository';
@@ -393,7 +393,58 @@ const POS = () => {
         }}>
 
             {/* ─────────── PANEL IZQUIERDO: Productos ─────────── */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflow: isMobile ? 'visible' : 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', overflow: isMobile ? 'visible' : 'hidden' }}>
+                {/* Header compacto del POS */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', minWidth: 0 }}>
+                        <div style={{
+                            width: '38px', height: '38px', borderRadius: '0.75rem',
+                            backgroundColor: '#eff6ff', border: '1px solid #dbeafe',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                        }}>
+                            <ShoppingCart size={19} color="#2563eb" />
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                            <h1 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
+                                Punto de Venta
+                            </h1>
+                            <Link
+                                to="/currency"
+                                style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                                    fontSize: '0.75rem', color: '#64748b', textDecoration: 'none', marginTop: '0.1rem'
+                                }}
+                            >
+                                <span style={{
+                                    width: '7px', height: '7px', borderRadius: '50%',
+                                    backgroundColor: tasaBcv > 0 ? '#16a34a' : '#ef4444',
+                                    display: 'inline-block', flexShrink: 0
+                                }} />
+                                <span>
+                                    {tasaBcv > 0 ? (
+                                        <>Tasa: <strong style={{ color: '#0f172a' }}>Bs. {formatBs(tasaBcv)}</strong></>
+                                    ) : (
+                                        <strong style={{ color: '#dc2626' }}>Configurar tasa BCV</strong>
+                                    )}
+                                </span>
+                            </Link>
+                        </div>
+                    </div>
+                    <Link
+                        to="/sales"
+                        title="Historial de Ventas"
+                        style={{
+                            width: '36px', height: '36px', borderRadius: '50%',
+                            backgroundColor: 'white', border: '1px solid #e2e8f0',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: '#475569', flexShrink: 0,
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                        }}
+                    >
+                        <Clock size={18} />
+                    </Link>
+                </div>
+
                 {/* Alerta de tasa BCV desactualizada o sin conexión */}
                 {rateInfo && (rateInfo.tasa <= 0 || !rateInfo.isFromToday || rateInfo.syncFailed) && (
                     <Link
@@ -403,7 +454,7 @@ const POS = () => {
                             alignItems: 'center',
                             gap: '0.625rem',
                             padding: '0.625rem 0.875rem',
-                            borderRadius: '0.625rem',
+                            borderRadius: '0.75rem',
                             backgroundColor: rateInfo.tasa <= 0 ? '#fef2f2' : '#fffbeb',
                             border: `1px solid ${rateInfo.tasa <= 0 ? '#fecaca' : '#fde68a'}`,
                             color: rateInfo.tasa <= 0 ? '#b91c1c' : '#92400e',
@@ -428,7 +479,7 @@ const POS = () => {
                 {/* Barra de búsqueda */}
                 <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem' }}>
                     <div style={{ position: 'relative', flex: 1 }}>
-                        <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                        <Search size={18} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                         <input
                             ref={searchRef}
                             type="text"
@@ -436,100 +487,233 @@ const POS = () => {
                             onChange={e => setSearchTerm(e.target.value)}
                             placeholder="Buscar por nombre o código de barras..."
                             style={{
-                                width: '100%', padding: '0.75rem 0.75rem 0.75rem 2.5rem',
-                                border: '2px solid #e2e8f0', borderRadius: '0.5rem',
-                                fontSize: '0.9rem', outline: 'none'
+                                width: '100%',
+                                padding: searchTerm ? '0.75rem 2.5rem 0.75rem 2.6rem' : '0.75rem 0.875rem 0.75rem 2.6rem',
+                                border: '1px solid #e2e8f0', borderRadius: '0.875rem',
+                                backgroundColor: 'white',
+                                fontSize: '0.9rem', outline: 'none',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                                boxSizing: 'border-box'
                             }}
                         />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchTerm('')}
+                                style={{
+                                    position: 'absolute', right: '0.625rem', top: '50%', transform: 'translateY(-50%)',
+                                    background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer',
+                                    display: 'flex', padding: '0.25rem'
+                                }}
+                                aria-label="Limpiar búsqueda"
+                            >
+                                <X size={16} />
+                            </button>
+                        )}
                     </div>
                 </form>
+
+                {/* Encabezado de catálogo */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.125rem' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', color: '#64748b', textTransform: 'uppercase' }}>
+                        Catálogo ({products.length} {products.length === 1 ? 'item' : 'items'})
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                        Toque para agregar
+                    </span>
+                </div>
 
                 {/* Grid de Productos */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(125px, 1fr))' : 'repeat(auto-fill, minmax(140px, 1fr))',
-                    gap: '0.75rem', overflowY: isMobile ? 'visible' : 'auto', paddingBottom: '0.5rem'
+                    gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(auto-fill, minmax(165px, 1fr))',
+                    gap: '0.75rem',
+                    overflowY: isMobile ? 'visible' : 'auto',
+                    paddingTop: '0.375rem',
+                    paddingRight: '0.375rem',
+                    paddingBottom: '0.5rem'
                 }}>
                     {products.map(product => {
                         const qtyInCart = cart.find(i => i.id === product.id)?.quantity || 0;
                         const isOutOfStock = !product.sin_control_stock && product.stock_actual <= 0;
+                        const isLowStock = !product.sin_control_stock && !isOutOfStock && product.stock_actual <= product.stock_minimo;
+                        const hasPhoto = Boolean(product.imagen || (posConfig.useImage && posConfig.image));
+
                         return (
                         <div
                             key={product.id}
                             onClick={() => addToCart(product)}
                             style={{
                                 position: 'relative',
-                                backgroundColor: 'white', borderRadius: '0.75rem',
-                                padding: '0.875rem', cursor: !isOutOfStock ? 'pointer' : 'not-allowed',
-                                border: `2px solid ${qtyInCart > 0 ? '#2563eb' : '#f1f5f9'}`, transition: 'all 0.15s',
+                                backgroundColor: 'white', borderRadius: '1rem',
+                                padding: '0.75rem',
+                                cursor: !isOutOfStock ? 'pointer' : 'not-allowed',
+                                border: qtyInCart > 0 ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                                transition: 'all 0.15s',
                                 opacity: isOutOfStock ? 0.5 : 1,
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.07)'
+                                boxShadow: qtyInCart > 0 ? '0 4px 12px rgba(37, 99, 235, 0.12)' : '0 2px 6px rgba(15, 23, 42, 0.04)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
                             }}
                             onMouseEnter={e => { if (!isOutOfStock) e.currentTarget.style.borderColor = '#2563eb'; }}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = qtyInCart > 0 ? '#2563eb' : '#f1f5f9'}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = qtyInCart > 0 ? '#2563eb' : '#e2e8f0'}
                         >
-                            {/* Ícono / color placeholder u Opcion de Imagen */}
-                            <div style={{
-                                height: '80px', borderRadius: '0.5rem', marginBottom: '0.625rem',
-                                backgroundColor: isOutOfStock ? '#f1f5f9' : (product.imagen || (posConfig.useImage && posConfig.image) ? 'transparent' : posConfig.bg),
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                overflow: 'hidden',
-                                transition: 'all 0.2s ease',
-                                border: '1px solid #f1f5f9'
-                            }}>
-                                {product.imagen ? (
-                                    <img 
-                                        src={product.imagen} 
-                                        alt={product.nombre} 
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                                    />
-                                ) : isOutOfStock ? (
-                                    <ProductIcon size={24} color="#cbd5e1" />
-                                ) : posConfig.useImage && posConfig.image ? (
-                                    <img 
-                                        src={posConfig.image} 
-                                        alt={product.nombre} 
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                                    />
-                                ) : (
-                                    <ProductIcon size={24} color={posConfig.iconColor} />
-                                )}
-                            </div>
-                            <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1e293b', marginBottom: '0.25rem', lineHeight: 1.3 }}>
-                                {product.nombre}
-                            </p>
-                            <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2563eb', marginBottom: '0.125rem' }}>
-                                ${(product.precio_venta_usd_centavos / 100).toFixed(2)}
-                            </p>
-                            {tasaBcv > 0 && (
-                                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#16a34a', marginBottom: '0.125rem' }}>
-                                    Bs. {((product.precio_venta_usd_centavos / 100) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </p>
-                            )}
-                            <p style={{ fontSize: '0.7rem', color: product.sin_control_stock ? '#16a34a' : (product.stock_actual <= product.stock_minimo ? '#ef4444' : '#94a3b8'), paddingRight: qtyInCart > 0 ? '2.25rem' : 0 }}>
-                                {product.sin_control_stock ? 'Disponible' : `Stock: ${product.stock_actual}`}
-                            </p>
+                            {/* Badge de cantidad en esquina superior derecha */}
                             {qtyInCart > 0 && (
                                 <div style={{
                                     position: 'absolute',
-                                    bottom: '0.625rem',
-                                    right: '0.625rem',
-                                    minWidth: '26px',
-                                    height: '26px',
+                                    top: '-8px',
+                                    right: '-8px',
+                                    minWidth: '24px',
+                                    height: '24px',
                                     padding: '0 6px',
-                                    borderRadius: '0.5rem',
+                                    borderRadius: '999px',
                                     backgroundColor: '#2563eb',
                                     color: 'white',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
+                                    fontSize: '0.75rem',
+                                    fontWeight: 800,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.35)'
+                                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.4)',
+                                    zIndex: 2,
                                 }}>
                                     {qtyInCart}
                                 </div>
                             )}
+
+                            <div>
+                                {/* Ícono / color placeholder u Opcion de Imagen */}
+                                <div style={{
+                                    height: '92px', borderRadius: '0.75rem', marginBottom: '0.625rem',
+                                    backgroundColor: isOutOfStock ? '#f1f5f9' : (hasPhoto ? 'transparent' : posConfig.bg),
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    overflow: 'hidden',
+                                    transition: 'all 0.2s ease',
+                                    border: '1px solid #f1f5f9'
+                                }}>
+                                    {product.imagen ? (
+                                        <img 
+                                            src={product.imagen} 
+                                            alt={product.nombre} 
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                        />
+                                    ) : isOutOfStock ? (
+                                        <ProductIcon size={26} color="#cbd5e1" />
+                                    ) : posConfig.useImage && posConfig.image ? (
+                                        <img 
+                                            src={posConfig.image} 
+                                            alt={product.nombre} 
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                        />
+                                    ) : (
+                                        <div style={{
+                                            width: '44px', height: '44px', borderRadius: '0.75rem',
+                                            backgroundColor: 'white',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: '0 2px 8px rgba(15, 23, 42, 0.06)'
+                                        }}>
+                                            <ProductIcon size={22} color={posConfig.iconColor} />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <p style={{
+                                    fontSize: '0.875rem', fontWeight: 700, color: '#0f172a',
+                                    marginBottom: '0.3rem', lineHeight: 1.25,
+                                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                                }}>
+                                    {product.nombre}
+                                </p>
+
+                                {/* Precio USD + Bs en la misma línea */}
+                                <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.625rem' }}>
+                                    <span style={{ fontSize: '1rem', fontWeight: 800, color: '#2563eb' }}>
+                                        ${(product.precio_venta_usd_centavos / 100).toFixed(2)}
+                                    </span>
+                                    {tasaBcv > 0 && (
+                                        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#16a34a' }}>
+                                            Bs. {formatBs((product.precio_venta_usd_centavos / 100) * tasaBcv)}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Fila inferior: Stock + Stepper / Botón + */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.35rem', paddingTop: '0.25rem' }}>
+                                {product.sin_control_stock ? (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', fontWeight: 600, color: '#16a34a' }}>
+                                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#16a34a', display: 'inline-block' }} />
+                                        Disponible
+                                    </span>
+                                ) : isLowStock ? (
+                                    <span style={{
+                                        fontSize: '0.7rem', fontWeight: 700,
+                                        padding: '0.15rem 0.45rem', borderRadius: '0.375rem',
+                                        backgroundColor: '#fef3c7', color: '#b45309'
+                                    }}>
+                                        Stock: {product.stock_actual}
+                                    </span>
+                                ) : (
+                                    <span style={{ fontSize: '0.72rem', color: isOutOfStock ? '#ef4444' : '#64748b', fontWeight: 500 }}>
+                                        {isOutOfStock ? 'Agotado' : `Stock: ${product.stock_actual}`}
+                                    </span>
+                                )}
+
+                                {qtyInCart > 0 ? (
+                                    <div
+                                        onClick={e => e.stopPropagation()}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flexShrink: 0 }}
+                                    >
+                                        <button
+                                            type="button"
+                                            onClick={() => updateQuantity(product.id, -1)}
+                                            style={{
+                                                width: '24px', height: '24px', borderRadius: '0.4rem',
+                                                backgroundColor: '#f1f5f9', color: '#334155',
+                                                border: '1px solid #e2e8f0',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                                            }}
+                                            aria-label="Restar"
+                                        >
+                                            <Minus size={12} />
+                                        </button>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', minWidth: '16px', textAlign: 'center' }}>
+                                            {qtyInCart}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => updateQuantity(product.id, 1)}
+                                            style={{
+                                                width: '24px', height: '24px', borderRadius: '0.4rem',
+                                                backgroundColor: '#2563eb', color: 'white',
+                                                border: 'none',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                                            }}
+                                            aria-label="Sumar"
+                                        >
+                                            <Plus size={12} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); addToCart(product); }}
+                                        disabled={isOutOfStock}
+                                        style={{
+                                            width: '28px', height: '28px', borderRadius: '0.5rem',
+                                            backgroundColor: '#f8fafc', color: isOutOfStock ? '#cbd5e1' : '#475569',
+                                            border: '1px solid #e2e8f0',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            cursor: isOutOfStock ? 'not-allowed' : 'pointer', flexShrink: 0
+                                        }}
+                                        aria-label="Agregar"
+                                    >
+                                        <Plus size={15} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         );
                     })}
@@ -560,11 +744,11 @@ const POS = () => {
                         left: '1rem',
                         right: '1rem',
                         zIndex: 990,
-                        backgroundColor: '#2563eb',
+                        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
                         color: 'white',
                         border: 'none',
                         borderRadius: '1rem',
-                        padding: '0.875rem 1.25rem',
+                        padding: '0.75rem 1rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -575,16 +759,36 @@ const POS = () => {
                     }}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                        <ShoppingCart size={20} />
-                        <span>Ver Carrito ({totalItemsCount})</span>
+                        <div style={{
+                            width: '32px', height: '32px', borderRadius: '0.5rem',
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0
+                        }}>
+                            <ShoppingCart size={17} />
+                        </div>
+                        <span style={{ fontWeight: 700 }}>Ver Carrito</span>
+                        <span style={{
+                            backgroundColor: 'rgba(255,255,255,0.25)',
+                            color: 'white',
+                            borderRadius: '999px',
+                            padding: '0.1rem 0.5rem',
+                            fontSize: '0.75rem',
+                            fontWeight: 800
+                        }}>
+                            {totalItemsCount}
+                        </span>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                        <span>${total.toFixed(2)}</span>
-                        {tasaBcv > 0 && (
-                            <span style={{ fontSize: '0.75rem', opacity: 0.9, marginLeft: '0.5rem', fontWeight: 500 }}>
-                                · Bs. {formatBs(total * tasaBcv)}
-                            </span>
-                        )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontSize: '1.05rem', fontWeight: 800 }}>${total.toFixed(2)}</span>
+                            {tasaBcv > 0 && (
+                                <span style={{ fontSize: '0.72rem', opacity: 0.9, marginLeft: '0.35rem', fontWeight: 500 }}>
+                                    · Bs. {formatBs(total * tasaBcv)}
+                                </span>
+                            )}
+                        </div>
+                        <ChevronRight size={18} />
                     </div>
                 </button>
             )}
