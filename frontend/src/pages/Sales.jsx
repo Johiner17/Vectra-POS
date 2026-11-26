@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Eye, X } from 'lucide-react';
+import { Search, Eye, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { saleRepository } from '../services/saleRepository';
 import { formatBs } from '../utils/formatters';
@@ -111,12 +111,15 @@ const SaleDetailModal = ({ sale, onClose }) => {
     );
 };
 
+const PAGE_SIZE = 20;
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 const Sales = () => {
     const [sales, setSales] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedSale, setSelectedSale] = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
     const [filters, setFilters] = useState({
         fechaInicio: '',
         fechaFin: '',
@@ -140,6 +143,10 @@ const Sales = () => {
     }, [filters.fechaInicio, filters.fechaFin]);
 
     useEffect(() => { fetchSales(); }, [fetchSales]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filters.search, filters.fechaInicio, filters.fechaFin]);
 
     const openDetail = async (saleId) => {
         setDetailLoading(true);
@@ -166,6 +173,10 @@ const Sales = () => {
         : sales;
 
     const totalUsd = filteredSales.reduce((a, s) => a + (s.total_usd_centavos / 100), 0);
+    const totalPages = Math.max(1, Math.ceil(filteredSales.length / PAGE_SIZE));
+    const safePage = Math.min(currentPage, totalPages);
+    const startIndex = (safePage - 1) * PAGE_SIZE;
+    const paginatedSales = filteredSales.slice(startIndex, startIndex + PAGE_SIZE);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -271,7 +282,7 @@ const Sales = () => {
                                     No se encontraron ventas
                                 </td>
                             </tr>
-                        ) : filteredSales.map(sale => (
+                        ) : paginatedSales.map(sale => (
                             <tr
                                 key={sale.id}
                                 style={{ borderBottom: '1px solid #f8fafc', cursor: 'pointer', transition: 'background 0.1s' }}
@@ -329,6 +340,61 @@ const Sales = () => {
                         ))}
                     </tbody>
                 </table>
+
+                {/* Paginación */}
+                {!loading && filteredSales.length > PAGE_SIZE && (
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '0.75rem',
+                        padding: '0.875rem 1rem',
+                        borderTop: '1px solid #f1f5f9',
+                        backgroundColor: '#f8fafc'
+                    }}>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                            Mostrando <strong>{startIndex + 1}–{Math.min(startIndex + PAGE_SIZE, filteredSales.length)}</strong> de <strong>{filteredSales.length}</strong>
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={safePage <= 1}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.25rem',
+                                    padding: '0.45rem 0.75rem', borderRadius: '0.5rem',
+                                    border: '1px solid #e2e8f0',
+                                    backgroundColor: safePage <= 1 ? '#f1f5f9' : 'white',
+                                    color: safePage <= 1 ? '#94a3b8' : '#334155',
+                                    fontSize: '0.8rem', fontWeight: 600,
+                                    cursor: safePage <= 1 ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                <ChevronLeft size={16} />
+                                Anterior
+                            </button>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#334155', padding: '0 0.25rem' }}>
+                                {safePage} / {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={safePage >= totalPages}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.25rem',
+                                    padding: '0.45rem 0.75rem', borderRadius: '0.5rem',
+                                    border: '1px solid #e2e8f0',
+                                    backgroundColor: safePage >= totalPages ? '#f1f5f9' : 'white',
+                                    color: safePage >= totalPages ? '#94a3b8' : '#334155',
+                                    fontSize: '0.8rem', fontWeight: 600,
+                                    cursor: safePage >= totalPages ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                Siguiente
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Modal de Detalle */}

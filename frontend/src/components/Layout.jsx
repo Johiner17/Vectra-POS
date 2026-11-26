@@ -30,11 +30,11 @@ const navItems = [
 
 /** Ítems que aparecen en la barra inferior de móvil */
 const bottomNavItems = [
-    { icon: ShoppingCart,  label: 'POS',          path: '/pos' },
-    { icon: Package,       label: 'Inventario',    path: '/inventory' },
-    { icon: ClipboardList, label: 'Ventas',        path: '/sales' },
-    { icon: LayoutDashboard, label: 'Dashboard',   path: '/dashboard' },
-    { icon: Settings,      label: 'Config',        path: '/settings' },
+    { icon: ShoppingCart,  label: 'POS',        path: '/pos' },
+    { icon: Package,       label: 'Inventario', path: '/inventory' },
+    { icon: ClipboardList, label: 'Ventas',     path: '/sales' },
+    { icon: BarChart3,     label: 'Reportes',   path: '/reports' },
+    { icon: Settings,      label: 'Config',     path: '/settings' },
 ];
 
 const Layout = () => {
