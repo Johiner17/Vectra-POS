@@ -1,6 +1,7 @@
 import { db } from './db.js';
 
 const LAST_BACKUP_KEY = 'last_backup_at';
+const AUTO_BACKUP_KEY = 'auto_backup_enabled';
 const CUSTOMIZATION_KEYS = [
     'pos_product_icon',
     'pos_product_bg',
@@ -9,12 +10,58 @@ const CUSTOMIZATION_KEYS = [
     'pos_product_image',
 ];
 
-function getTodayStamp() {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
+function getTodayStamp(date = new Date()) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+}
+
+async function buildBackupPayload() {
+    const [products, exchangeRates, sales, saleItems, payments, inventoryMovements, settings] =
+        await Promise.all([
+            db.products.toArray(),
+            db.exchangeRates.toArray(),
+            db.sales.toArray(),
+            db.saleItems.toArray(),
+            db.payments.toArray(),
+            db.inventoryMovements.toArray(),
+            db.settings.toArray(),
+        ]);
+
+    const customization = {};
+    for (const key of CUSTOMIZATION_KEYS) {
+        const val = localStorage.getItem(key);
+        if (val !== null) customization[key] = val;
+    }
+
+    const now = new Date().toISOString();
+    const payload = {
+        app: 'Vectra POS',
+        version: 1,
+        exportedAt: now,
+        tables: {
+            products,
+            exchangeRates,
+            sales,
+            saleItems,
+            payments,
+            inventoryMovements,
+            settings,
+        },
+        customization,
+    };
+
+    return {
+        payload,
+        now,
+        fileName: `vectra-pos-backup-${getTodayStamp()}.json`,
+        counts: {
+            products: products.length,
+            sales: sales.length,
+            exchangeRates: exchangeRates.length,
+        },
+    };
 }
 
 export const backupService = {
@@ -53,6 +100,7 @@ export const backupService = {
         return {
             lastBackupAt: lastBackupEntry?.valor || null,
             persisted,
+            autoBackupEnabled: await this.isAutoBackupEnabled(),
             counts: {
                 products: productsCount,
                 sales: salesCount,
@@ -62,43 +110,46 @@ export const backupService = {
         };
     },
 
+    async isAutoBackupEnabled() {
+        const row = await db.settings.get(AUTO_BACKUP_KEY);
+        // Activado por defecto si nunca se ha configurado
+        return row?.valor !== undefined ? Boolean(row.valor) : true;
+    },
+
+    async setAutoBackupEnabled(enabled) {
+        await db.settings.put({
+            clave: AUTO_BACKUP_KEY,
+            valor: Boolean(enabled),
+            updated_at: new Date().toISOString(),
+        });
+        return Boolean(enabled);
+    },
+
+    async needsDailyBackup() {
+        const [salesCount, lastEntry] = await Promise.all([
+            db.sales.count(),
+            db.settings.get(LAST_BACKUP_KEY),
+        ]);
+        if (salesCount === 0) return { needed: false, salesCount: 0, lastBackupAt: null };
+        const lastAt = lastEntry?.valor || null;
+        if (!lastAt) return { needed: true, salesCount, lastBackupAt: null };
+        const lastStamp = getTodayStamp(new Date(lastAt));
+        return {
+            needed: lastStamp !== getTodayStamp(),
+            salesCount,
+            lastBackupAt: lastAt,
+        };
+    },
+
+    canShareFiles() {
+        return typeof navigator !== 'undefined' && typeof navigator.share === 'function' && typeof navigator.canShare === 'function';
+    },
+
     /**
      * Exporta toda la base IndexedDB + personalización visual a un archivo JSON descargable.
      */
     async exportBackup() {
-        const [products, exchangeRates, sales, saleItems, payments, inventoryMovements, settings] =
-            await Promise.all([
-                db.products.toArray(),
-                db.exchangeRates.toArray(),
-                db.sales.toArray(),
-                db.saleItems.toArray(),
-                db.payments.toArray(),
-                db.inventoryMovements.toArray(),
-                db.settings.toArray(),
-            ]);
-
-        const customization = {};
-        for (const key of CUSTOMIZATION_KEYS) {
-            const val = localStorage.getItem(key);
-            if (val !== null) customization[key] = val;
-        }
-
-        const now = new Date().toISOString();
-        const payload = {
-            app: 'Vectra POS',
-            version: 1,
-            exportedAt: now,
-            tables: {
-                products,
-                exchangeRates,
-                sales,
-                saleItems,
-                payments,
-                inventoryMovements,
-                settings,
-            },
-            customization,
-        };
+        const { payload, now, fileName, counts } = await buildBackupPayload();
 
         await db.settings.put({
             clave: LAST_BACKUP_KEY,
@@ -110,7 +161,7 @@ export const backupService = {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `vectra-pos-backup-${getTodayStamp()}.json`;
+        link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -118,12 +169,50 @@ export const backupService = {
 
         return {
             exportedAt: now,
-            counts: {
-                products: products.length,
-                sales: sales.length,
-                exchangeRates: exchangeRates.length,
-            },
+            counts,
         };
+    },
+
+    /**
+     * Comparte el archivo .json por WhatsApp / Drive usando Web Share API (o descarga si no está disponible).
+     */
+    async shareBackup() {
+        const { payload, now, fileName, counts } = await buildBackupPayload();
+        const file = new File([JSON.stringify(payload, null, 2)], fileName, {
+            type: 'application/json',
+        });
+
+        if (this.canShareFiles() && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: 'Respaldo Vectra POS',
+                text: `Copia de seguridad de Vectra POS (${counts.products} productos, ${counts.sales} ventas).`,
+            });
+            await db.settings.put({
+                clave: LAST_BACKUP_KEY,
+                valor: now,
+                updated_at: now,
+            });
+            return { shared: true, exportedAt: now, counts };
+        }
+
+        const res = await this.exportBackup();
+        return { shared: false, downloaded: true, ...res };
+    },
+
+    /**
+     * Si el respaldo automático diario está activo y hoy aún no se ha descargado copia,
+     * dispara la descarga automáticamente (pensado para llamarse tras una acción del usuario).
+     */
+    async runAutoBackupIfDue() {
+        const enabled = await this.isAutoBackupEnabled();
+        if (!enabled) return { downloaded: false, reason: 'disabled' };
+
+        const { needed } = await this.needsDailyBackup();
+        if (!needed) return { downloaded: false, reason: 'already_backed_up_today' };
+
+        const res = await this.exportBackup();
+        return { downloaded: true, ...res };
     },
 
     /**

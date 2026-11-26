@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import CheckoutModal from '../components/CheckoutModal';
 import { productRepository } from '../services/productRepository';
 import { currencyRepository } from '../services/currencyRepository';
+import { backupService } from '../services/backupService';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { formatBs } from '../utils/formatters';
 
@@ -151,10 +152,18 @@ const POS = () => {
     const iva = calculateIva();
     const total = subtotal + iva;
 
-    const handleCheckoutSuccess = () => {
+    const handleCheckoutSuccess = async () => {
         setCart([]);
         setIsMobileCartOpen(false);
         fetchProducts(searchTerm);
+        try {
+            const autoRes = await backupService.runAutoBackupIfDue();
+            if (autoRes?.downloaded) {
+                toast.success('💾 Copia de seguridad diaria descargada automáticamente (.json)');
+            }
+        } catch {
+            // Nunca bloquear la venta si falla la descarga automática
+        }
     };
 
     const iconsMap = { ShoppingCart, Package, Tag, Coffee, Box, Star };

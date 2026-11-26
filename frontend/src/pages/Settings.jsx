@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import {
-    Save, Building2, Receipt, Database, Download, Upload,
+    Save, Building2, Receipt, Database, Download, Upload, Share2,
     FileSpreadsheet, Loader2, ChevronDown, ChevronRight, ShieldCheck, AlertTriangle
 } from 'lucide-react';
 import { settingsRepository } from '../services/settingsRepository';
@@ -201,6 +201,40 @@ const Settings = () => {
         }
     };
 
+    const handleShareBackup = async () => {
+        setBusyBackup(true);
+        try {
+            const res = await backupService.shareBackup();
+            const status = await backupService.getStatus();
+            setBackupStatus(status);
+            if (res.shared) {
+                toast.success('Respaldo compartido correctamente');
+            } else {
+                toast.success(`Respaldo descargado (${res.counts.products} productos, ${res.counts.sales} ventas)`);
+            }
+        } catch (error) {
+            if (error?.name !== 'AbortError') {
+                toast.error(error.message || 'No se pudo compartir el respaldo');
+            }
+        } finally {
+            setBusyBackup(false);
+        }
+    };
+
+    const handleToggleAutoBackup = async (checked) => {
+        try {
+            await backupService.setAutoBackupEnabled(checked);
+            setBackupStatus((prev) => (prev ? { ...prev, autoBackupEnabled: checked } : prev));
+            toast.success(
+                checked
+                    ? 'Respaldo automático diario activado'
+                    : 'Respaldo automático diario desactivado'
+            );
+        } catch {
+            toast.error('No se pudo actualizar la preferencia');
+        }
+    };
+
     if (loading) {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
@@ -323,6 +357,35 @@ const Settings = () => {
                                 </span>
                             </div>
 
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '0.75rem',
+                                    padding: '0.75rem 1rem',
+                                    borderRadius: '0.5rem',
+                                    backgroundColor: '#f8fafc',
+                                    border: '1px solid #e2e8f0',
+                                    marginBottom: '1rem',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={backupStatus?.autoBackupEnabled ?? true}
+                                    onChange={(e) => handleToggleAutoBackup(e.target.checked)}
+                                    style={{ marginTop: '0.15rem', width: '17px', height: '17px', accentColor: '#2563eb', cursor: 'pointer' }}
+                                />
+                                <div>
+                                    <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>
+                                        Respaldo automático diario (.json)
+                                    </span>
+                                    <span style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginTop: '0.125rem' }}>
+                                        Descarga automáticamente una copia de seguridad al completar la primera venta del día.
+                                    </span>
+                                </div>
+                            </label>
+
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
                                 <button
                                     type="button"
@@ -332,6 +395,16 @@ const Settings = () => {
                                 >
                                     <Download size={16} />
                                     Descargar Copia (.json)
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={handleShareBackup}
+                                    disabled={busyBackup}
+                                    style={backupBtnStyle('#7c3aed')}
+                                >
+                                    <Share2 size={16} />
+                                    Enviar por WhatsApp / Drive
                                 </button>
 
                                 <button
