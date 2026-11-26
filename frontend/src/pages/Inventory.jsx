@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit2, ArrowRightLeft, History, Search, AlertTriangle, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Plus, Edit2, ArrowRightLeft, History, Search, AlertTriangle, CheckCircle2, ChevronRight, SlidersHorizontal } from 'lucide-react';
 import ProductModal from '../components/ProductModal';
 import StockAdjustmentModal from '../components/StockAdjustmentModal';
 import KardexModal from '../components/KardexModal';
 import { productRepository } from '../services/productRepository';
 import { currencyRepository } from '../services/currencyRepository';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { formatBs } from '../utils/formatters';
 
 const Inventory = () => {
+    const isMobile = useIsMobile(768);
     const [products, setProducts] = useState([]);
     const [lowStockProducts, setLowStockProducts] = useState([]);
     const [showLowStockOnly, setShowLowStockOnly] = useState(false);
@@ -108,14 +111,17 @@ const Inventory = () => {
     };
 
     const lowStockCount = lowStockProducts.length;
+    const filteredProducts = getFilteredProducts();
 
     return (
-        <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                <h2>Gestión de Inventario</h2>
-                <button onClick={openNew} className="btn btn-primary">
-                    <Plus size={20} style={{ marginRight: '0.5rem' }} /> Nuevo Producto
-                </button>
+        <div style={{ paddingBottom: isMobile ? '5.25rem' : 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>Gestión de Inventario</h2>
+                {!isMobile && (
+                    <button onClick={openNew} className="btn btn-primary" style={{ borderRadius: '0.75rem', padding: '0.625rem 1.125rem', fontWeight: 600 }}>
+                        <Plus size={18} style={{ marginRight: '0.4rem' }} /> Nuevo Producto
+                    </button>
+                )}
             </div>
 
             {/* Estado de Stock — Estilo Full-Bleed Moderno */}
@@ -203,96 +209,225 @@ const Inventory = () => {
                 </button>
             </div>
 
-            <div className="card" style={{ marginBottom: '1rem' }}>
-                <form onSubmit={handleSearch} style={{ display: 'flex', gap: '1rem' }}>
+            {/* Buscador limpio + botón filtro rápido */}
+            <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.625rem', marginBottom: '1.25rem', alignItems: 'center' }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                    <Search size={18} color="#94a3b8" style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)' }} />
                     <input
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         placeholder="Buscar por nombre o código..."
-                        style={{ flex: 1, padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}
+                        style={{
+                            width: '100%',
+                            padding: '0.75rem 0.875rem 0.75rem 2.6rem',
+                            borderRadius: '0.875rem',
+                            border: '1px solid #e2e8f0',
+                            backgroundColor: 'white',
+                            fontSize: '0.9rem',
+                            color: '#1e293b',
+                            outline: 'none',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                            boxSizing: 'border-box',
+                        }}
                     />
-                    <button type="submit" className="btn btn-primary">
-                        <Search size={20} />
-                    </button>
-                </form>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setShowLowStockOnly(!showLowStockOnly)}
+                    title={showLowStockOnly ? 'Mostrar todos' : 'Filtrar bajo stock'}
+                    style={{
+                        width: '46px',
+                        height: '46px',
+                        borderRadius: '0.875rem',
+                        border: `1px solid ${showLowStockOnly ? '#e11d48' : '#e2e8f0'}`,
+                        backgroundColor: showLowStockOnly ? '#fff1f2' : 'white',
+                        color: showLowStockOnly ? '#e11d48' : '#475569',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                    }}
+                >
+                    <SlidersHorizontal size={18} />
+                </button>
+            </form>
+
+            {/* Encabezado de lista */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '0.75rem',
+                padding: '0 0.25rem',
+            }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', color: '#475569', textTransform: 'uppercase' }}>
+                    Productos ({filteredProducts.length})
+                </span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b' }}>
+                    Precio (USD)
+                </span>
             </div>
 
-            <div className="card table-responsive" style={{ padding: 0 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                        <tr>
-                            <th className="hide-mobile" style={{ padding: '1rem', textAlign: 'left' }}>Código</th>
-                            <th style={{ padding: '1rem', textAlign: 'left' }}>Producto</th>
-                            <th style={{ padding: '1rem', textAlign: 'right' }}>Precio (USD)</th>
-                            <th className="hide-mobile" style={{ padding: '1rem', textAlign: 'right' }}>Precio (Bs.)</th>
-                            <th style={{ padding: '1rem', textAlign: 'right' }}>Stock</th>
-                            <th style={{ padding: '1rem', textAlign: 'center' }}>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {getFilteredProducts().map(product => (
-                            <tr key={product.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                <td className="hide-mobile" style={{ padding: '1rem', color: '#64748b' }}>{product.codigo_barras}</td>
-                                <td style={{ padding: '1rem', fontWeight: 500 }}>{product.nombre}</td>
-                                <td style={{ padding: '1rem', textAlign: 'right', color: '#2563eb', whiteSpace: 'nowrap' }}>
-                                    ${(product.precio_venta_usd_centavos / 100).toFixed(2)}
-                                </td>
-                                <td className="hide-mobile" style={{ padding: '1rem', textAlign: 'right', color: '#16a34a', whiteSpace: 'nowrap' }}>
-                                    {tasaBcv > 0
-                                        ? `Bs. ${((product.precio_venta_usd_centavos / 100) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                        : '—'
-                                    }
-                                </td>
-                                <td style={{ padding: '1rem', textAlign: 'right' }}>
-                                    {product.sin_control_stock ? (
-                                        <span style={{
-                                            padding: '0.25rem 0.75rem',
-                                            borderRadius: '1rem',
-                                            backgroundColor: '#eff6ff',
-                                            color: '#1d4ed8',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 600,
-                                            whiteSpace: 'nowrap'
+            {/* Cards de Productos */}
+            {filteredProducts.length === 0 && !loading ? (
+                <div className="card" style={{ textAlign: 'center', padding: '2.5rem 1.5rem', color: '#94a3b8', borderRadius: '1rem' }}>
+                    No se encontraron productos
+                </div>
+            ) : (
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))',
+                    gap: '0.875rem',
+                }}>
+                    {filteredProducts.map(product => {
+                        const isLow = !product.sin_control_stock && product.stock_actual <= product.stock_minimo;
+                        return (
+                            <div
+                                key={product.id}
+                                style={{
+                                    backgroundColor: 'white',
+                                    borderRadius: '1rem',
+                                    padding: '1rem 1.125rem',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                                    border: '1px solid #f1f5f9',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '0.875rem',
+                                }}
+                            >
+                                {/* Fila superior: Nombre + Código | Precio USD + Bs */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                        <h3 style={{
+                                            margin: 0,
+                                            fontSize: '1rem',
+                                            fontWeight: 700,
+                                            color: '#0f172a',
+                                            lineHeight: 1.3,
+                                            wordBreak: 'break-word',
                                         }}>
-                                            Ilimitado
-                                        </span>
-                                    ) : (
-                                        <span style={{
-                                            padding: '0.25rem 0.75rem',
-                                            borderRadius: '1rem',
-                                            backgroundColor: product.stock_actual <= product.stock_minimo ? '#fee2e2' : '#dcfce7',
-                                            color: product.stock_actual <= product.stock_minimo ? '#991b1b' : '#166534',
-                                            fontSize: '0.875rem',
-                                            fontWeight: 500
+                                            {product.nombre}
+                                        </h3>
+                                        <p style={{
+                                            margin: '0.2rem 0 0',
+                                            fontSize: '0.78rem',
+                                            color: '#94a3b8',
                                         }}>
-                                            {product.stock_actual}
-                                        </span>
-                                    )}
-                                </td>
-                                <td style={{ padding: '1rem', textAlign: 'center' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
+                                            {product.codigo_barras ? `SKU: ${product.codigo_barras}` : 'Sin código de barras'}
+                                        </p>
+                                    </div>
+                                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#2563eb', lineHeight: 1.2 }}>
+                                            ${(product.precio_venta_usd_centavos / 100).toFixed(2)}
+                                        </div>
+                                        {tasaBcv > 0 && (
+                                            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#16a34a', marginTop: '0.15rem' }}>
+                                                Bs. {formatBs((product.precio_venta_usd_centavos / 100) * tasaBcv)}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Fila inferior: Stock + Acciones */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500 }}>Stock:</span>
+                                        {product.sin_control_stock ? (
+                                            <span style={{
+                                                padding: '0.22rem 0.7rem',
+                                                borderRadius: '999px',
+                                                backgroundColor: '#eff6ff',
+                                                color: '#1d4ed8',
+                                                fontSize: '0.78rem',
+                                                fontWeight: 700,
+                                            }}>
+                                                Ilimitado
+                                            </span>
+                                        ) : (
+                                            <span style={{
+                                                padding: '0.22rem 0.7rem',
+                                                borderRadius: '999px',
+                                                backgroundColor: isLow ? '#fee2e2' : '#dcfce7',
+                                                color: isLow ? '#991b1b' : '#166534',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 700,
+                                            }}>
+                                                {product.stock_actual}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         {!product.sin_control_stock && (
-                                            <button onClick={() => openStock(product)} title="Ajuste Stock" style={{ padding: '0.5rem', backgroundColor: '#eff6ff', borderRadius: '0.25rem', color: '#2563eb' }}>
+                                            <button
+                                                onClick={() => openStock(product)}
+                                                title="Ajuste Stock"
+                                                style={{
+                                                    width: '36px', height: '36px', borderRadius: '0.625rem',
+                                                    backgroundColor: '#eff6ff', color: '#2563eb',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                }}
+                                            >
                                                 <ArrowRightLeft size={16} />
                                             </button>
                                         )}
-                                        <button onClick={() => openKardex(product)} title="Ver Kardex" style={{ padding: '0.5rem', backgroundColor: '#f0fdf4', borderRadius: '0.25rem', color: '#16a34a' }}>
+                                        <button
+                                            onClick={() => openKardex(product)}
+                                            title="Ver Kardex"
+                                            style={{
+                                                width: '36px', height: '36px', borderRadius: '0.625rem',
+                                                backgroundColor: '#f0fdf4', color: '#16a34a',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            }}
+                                        >
                                             <History size={16} />
                                         </button>
-                                        <button onClick={() => openEdit(product)} title="Editar" style={{ padding: '0.5rem', backgroundColor: '#f8fafc', borderRadius: '0.25rem', color: '#475569' }}>
+                                        <button
+                                            onClick={() => openEdit(product)}
+                                            title="Editar"
+                                            style={{
+                                                width: '36px', height: '36px', borderRadius: '0.625rem',
+                                                backgroundColor: '#f1f5f9', color: '#475569',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            }}
+                                        >
                                             <Edit2 size={16} />
                                         </button>
                                     </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {getFilteredProducts().length === 0 && !loading && (
-                            <tr><td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>No se encontraron productos</td></tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Botón flotante + Nuevo en móvil */}
+            {isMobile && (
+                <button
+                    onClick={openNew}
+                    style={{
+                        position: 'fixed',
+                        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 74px)',
+                        right: '1rem',
+                        zIndex: 990,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        padding: '0.85rem 1.35rem',
+                        borderRadius: '999px',
+                        backgroundColor: '#2563eb',
+                        color: 'white',
+                        fontSize: '0.95rem',
+                        fontWeight: 700,
+                        boxShadow: '0 8px 24px rgba(37, 99, 235, 0.35)',
+                    }}
+                >
+                    <Plus size={19} strokeWidth={2.5} />
+                    Nuevo
+                </button>
+            )}
 
             <ProductModal
                 isOpen={isProductModalOpen}
