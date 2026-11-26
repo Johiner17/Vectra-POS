@@ -217,8 +217,11 @@ const Settings = () => {
             preparedShareRef.current = prepared;
             if (res.shared) {
                 toast.success('Respaldo compartido correctamente');
-            } else if (res.fallbackDownloaded) {
-                toast.success('Copia descargada (.json). Ya puedes adjuntarla en WhatsApp o Drive.');
+            } else if (res.unsupported) {
+                toast('Tu navegador de escritorio no permite compartir archivos directo. Usa "Descargar Copia" y súbelo a WhatsApp Web o Drive.', {
+                    icon: 'ℹ️',
+                    duration: 5000,
+                });
             }
         } catch (error) {
             if (error?.name !== 'AbortError') {
@@ -629,7 +632,7 @@ const Settings = () => {
                                 <input
                                     ref={fileInputRef}
                                     type="file"
-                                    accept=".json,application/json"
+                                    accept=".json,.txt,application/json,text/plain"
                                     onChange={handleFileSelected}
                                     style={{ display: 'none' }}
                                 />
