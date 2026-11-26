@@ -94,14 +94,14 @@ const POS = () => {
     }, [searchTerm]);
 
     const addToCart = (product) => {
-        if (product.stock_actual <= 0) {
+        if (!product.sin_control_stock && product.stock_actual <= 0) {
             toast.error('Sin stock disponible');
             return;
         }
         setCart(prev => {
             const existing = prev.find(i => i.id === product.id);
             if (existing) {
-                if (existing.quantity >= product.stock_actual) {
+                if (!product.sin_control_stock && existing.quantity >= product.stock_actual) {
                     toast.error(`Stock máximo: ${product.stock_actual}`);
                     return prev;
                 }
@@ -116,7 +116,10 @@ const POS = () => {
             if (item.id !== id) return item;
             const newQty = item.quantity + delta;
             if (newQty <= 0) return null;
-            if (newQty > item.stock_actual) { toast.error(`Stock máximo: ${item.stock_actual}`); return item; }
+            if (!item.sin_control_stock && newQty > item.stock_actual) {
+                toast.error(`Stock máximo: ${item.stock_actual}`);
+                return item;
+            }
             return { ...item, quantity: newQty };
         }).filter(Boolean));
     };
@@ -436,6 +439,7 @@ const POS = () => {
                 }}>
                     {products.map(product => {
                         const qtyInCart = cart.find(i => i.id === product.id)?.quantity || 0;
+                        const isOutOfStock = !product.sin_control_stock && product.stock_actual <= 0;
                         return (
                         <div
                             key={product.id}
@@ -443,18 +447,18 @@ const POS = () => {
                             style={{
                                 position: 'relative',
                                 backgroundColor: 'white', borderRadius: '0.75rem',
-                                padding: '0.875rem', cursor: product.stock_actual > 0 ? 'pointer' : 'not-allowed',
+                                padding: '0.875rem', cursor: !isOutOfStock ? 'pointer' : 'not-allowed',
                                 border: `2px solid ${qtyInCart > 0 ? '#2563eb' : '#f1f5f9'}`, transition: 'all 0.15s',
-                                opacity: product.stock_actual <= 0 ? 0.5 : 1,
+                                opacity: isOutOfStock ? 0.5 : 1,
                                 boxShadow: '0 1px 3px rgba(0,0,0,0.07)'
                             }}
-                            onMouseEnter={e => { if (product.stock_actual > 0) e.currentTarget.style.borderColor = '#2563eb'; }}
+                            onMouseEnter={e => { if (!isOutOfStock) e.currentTarget.style.borderColor = '#2563eb'; }}
                             onMouseLeave={e => e.currentTarget.style.borderColor = qtyInCart > 0 ? '#2563eb' : '#f1f5f9'}
                         >
                             {/* Ícono / color placeholder u Opcion de Imagen */}
                             <div style={{
                                 height: '80px', borderRadius: '0.5rem', marginBottom: '0.625rem',
-                                backgroundColor: product.stock_actual <= 0 ? '#f1f5f9' : (product.imagen || (posConfig.useImage && posConfig.image) ? 'transparent' : posConfig.bg),
+                                backgroundColor: isOutOfStock ? '#f1f5f9' : (product.imagen || (posConfig.useImage && posConfig.image) ? 'transparent' : posConfig.bg),
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 overflow: 'hidden',
                                 transition: 'all 0.2s ease',
@@ -466,7 +470,7 @@ const POS = () => {
                                         alt={product.nombre} 
                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                                     />
-                                ) : product.stock_actual <= 0 ? (
+                                ) : isOutOfStock ? (
                                     <ProductIcon size={24} color="#cbd5e1" />
                                 ) : posConfig.useImage && posConfig.image ? (
                                     <img 
@@ -489,8 +493,8 @@ const POS = () => {
                                     Bs. {((product.precio_venta_usd_centavos / 100) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
                             )}
-                            <p style={{ fontSize: '0.7rem', color: product.stock_actual <= product.stock_minimo ? '#ef4444' : '#94a3b8', paddingRight: qtyInCart > 0 ? '2.25rem' : 0 }}>
-                                Stock: {product.stock_actual}
+                            <p style={{ fontSize: '0.7rem', color: product.sin_control_stock ? '#16a34a' : (product.stock_actual <= product.stock_minimo ? '#ef4444' : '#94a3b8'), paddingRight: qtyInCart > 0 ? '2.25rem' : 0 }}>
+                                {product.sin_control_stock ? 'Disponible' : `Stock: ${product.stock_actual}`}
                             </p>
                             {qtyInCart > 0 && (
                                 <div style={{

@@ -227,22 +227,38 @@ const Inventory = () => {
                                     }
                                 </td>
                                 <td style={{ padding: '1rem', textAlign: 'right' }}>
-                                    <span style={{
-                                        padding: '0.25rem 0.75rem',
-                                        borderRadius: '1rem',
-                                        backgroundColor: product.stock_actual <= product.stock_minimo ? '#fee2e2' : '#dcfce7',
-                                        color: product.stock_actual <= product.stock_minimo ? '#991b1b' : '#166534',
-                                        fontSize: '0.875rem',
-                                        fontWeight: 500
-                                    }}>
-                                        {product.stock_actual}
-                                    </span>
+                                    {product.sin_control_stock ? (
+                                        <span style={{
+                                            padding: '0.25rem 0.75rem',
+                                            borderRadius: '1rem',
+                                            backgroundColor: '#eff6ff',
+                                            color: '#1d4ed8',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600,
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            Ilimitado
+                                        </span>
+                                    ) : (
+                                        <span style={{
+                                            padding: '0.25rem 0.75rem',
+                                            borderRadius: '1rem',
+                                            backgroundColor: product.stock_actual <= product.stock_minimo ? '#fee2e2' : '#dcfce7',
+                                            color: product.stock_actual <= product.stock_minimo ? '#991b1b' : '#166534',
+                                            fontSize: '0.875rem',
+                                            fontWeight: 500
+                                        }}>
+                                            {product.stock_actual}
+                                        </span>
+                                    )}
                                 </td>
                                 <td style={{ padding: '1rem', textAlign: 'center' }}>
                                     <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
-                                        <button onClick={() => openStock(product)} title="Ajuste Stock" style={{ padding: '0.5rem', backgroundColor: '#eff6ff', borderRadius: '0.25rem', color: '#2563eb' }}>
-                                            <ArrowRightLeft size={16} />
-                                        </button>
+                                        {!product.sin_control_stock && (
+                                            <button onClick={() => openStock(product)} title="Ajuste Stock" style={{ padding: '0.5rem', backgroundColor: '#eff6ff', borderRadius: '0.25rem', color: '#2563eb' }}>
+                                                <ArrowRightLeft size={16} />
+                                            </button>
+                                        )}
                                         <button onClick={() => openKardex(product)} title="Ver Kardex" style={{ padding: '0.5rem', backgroundColor: '#f0fdf4', borderRadius: '0.25rem', color: '#16a34a' }}>
                                             <History size={16} />
                                         </button>

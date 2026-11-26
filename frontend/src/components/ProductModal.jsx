@@ -12,6 +12,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
         precio_costo_usd: '',
         stock_actual: 0,
         stock_minimo: 5,
+        sin_control_stock: false,
         unidad_medida: 'UNIDAD',
         aplica_iva: 1,
         tasa_iva: 16.00,
@@ -33,6 +34,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                     product.precio_costo_usd_centavos !== undefined && product.precio_costo_usd_centavos !== null
                         ? product.precio_costo_usd_centavos / 100
                         : '',
+                sin_control_stock: Boolean(product.sin_control_stock),
                 imagen: product.imagen || ''
             });
         } else {
@@ -44,6 +46,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                 precio_costo_usd: '',
                 stock_actual: 0,
                 stock_minimo: 5,
+                sin_control_stock: false,
                 unidad_medida: 'UNIDAD',
                 aplica_iva: 1,
                 tasa_iva: 16.00,
@@ -147,8 +150,9 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
 
             const payload = {
                 ...cleanFormData,
-                stock_actual: Number(formData.stock_actual) || 0,
-                stock_minimo: Number(formData.stock_minimo) || 0,
+                sin_control_stock: Boolean(formData.sin_control_stock),
+                stock_actual: formData.sin_control_stock ? 0 : (Number(formData.stock_actual) || 0),
+                stock_minimo: formData.sin_control_stock ? 0 : (Number(formData.stock_minimo) || 0),
                 precio_venta_usd: parseFloat(formData.precio_venta_usd) || 0,
                 precio_costo_usd: parseFloat(formData.precio_costo_usd) || 0,
             };
@@ -385,16 +389,16 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                         </div>
                         <div>
                             <label style={{ display: 'block', fontSize: '1rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>
-                                Costo Unitario (USD)
+                                Costo Unitario (USD) <span style={{ fontWeight: 400, fontSize: '0.8rem', color: '#94a3b8' }}>(opcional)</span>
                             </label>
                             <input
-                                required
                                 type="number"
                                 step="0.01"
+                                min="0"
                                 name="precio_costo_usd"
                                 value={formData.precio_costo_usd}
                                 onChange={handleChange}
-                                placeholder="0.00"
+                                placeholder="0.00 (opcional)"
                                 style={{
                                     width: '100%', padding: '0.55rem 0.75rem',
                                     border: '1.5px solid #e2e8f0', borderRadius: '0.5rem',
@@ -406,7 +410,36 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                         </div>
                     </div>
 
+                    {/* Opción: Sin control de stock (siempre disponible) */}
+                    <label style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '0.75rem',
+                        padding: '0.875rem 1rem',
+                        borderRadius: '0.75rem',
+                        backgroundColor: formData.sin_control_stock ? '#eff6ff' : '#f8fafc',
+                        border: `1.5px solid ${formData.sin_control_stock ? '#2563eb' : '#e2e8f0'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                    }}>
+                        <input
+                            type="checkbox"
+                            checked={Boolean(formData.sin_control_stock)}
+                            onChange={(e) => setFormData(prev => ({ ...prev, sin_control_stock: e.target.checked }))}
+                            style={{ marginTop: '0.2rem', width: '18px', height: '18px', accentColor: '#2563eb', cursor: 'pointer' }}
+                        />
+                        <div>
+                            <span style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: '#1e293b' }}>
+                                Producto siempre disponible (sin control de stock)
+                            </span>
+                            <span style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginTop: '0.15rem' }}>
+                                Ideal para comidas preparadas o productos donde no llevas conteo exacto. Nunca se agotará en el POS.
+                            </span>
+                        </div>
+                    </label>
+
                     {/* Stock */}
+                    {!formData.sin_control_stock && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
                             <label style={{ display: 'block', fontSize: '1rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>
@@ -450,6 +483,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                             />
                         </div>
                     </div>
+                    )}
 
                     {/* Impuestos */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>

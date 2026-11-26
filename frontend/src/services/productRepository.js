@@ -29,6 +29,7 @@ function normalizeProduct(raw, existing = null) {
         precio_costo_usd_centavos: costoCentavos,
         stock_actual: Number(raw.stock_actual ?? existing?.stock_actual ?? 0),
         stock_minimo: Number(raw.stock_minimo ?? existing?.stock_minimo ?? 0),
+        sin_control_stock: Boolean(raw.sin_control_stock ?? existing?.sin_control_stock ?? false),
         unidad_medida: String(raw.unidad_medida || existing?.unidad_medida || 'unidad').toLowerCase(),
         unidades_por_bulto: Number(raw.unidades_por_bulto ?? existing?.unidades_por_bulto ?? 1),
         aplica_iva: Number(raw.aplica_iva ?? existing?.aplica_iva ?? 1) ? 1 : 0,
@@ -154,7 +155,7 @@ export const productRepository = {
      */
     async getLowStock() {
         const all = await this.getAll();
-        return all.filter((p) => Number(p.stock_actual) <= Number(p.stock_minimo));
+        return all.filter((p) => !p.sin_control_stock && Number(p.stock_actual) <= Number(p.stock_minimo));
     },
 
     async getById(id) {

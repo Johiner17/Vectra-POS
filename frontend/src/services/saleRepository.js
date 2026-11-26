@@ -205,8 +205,9 @@ export const saleRepository = {
                         throw new Error(`Producto #${productoId} no encontrado en la base local.`);
                     }
 
+                    const sinControlStock = Boolean(producto.sin_control_stock);
                     const stockActual = Number(producto.stock_actual || 0);
-                    if (stockActual < cantidad) {
+                    if (!sinControlStock && stockActual < cantidad) {
                         throw new Error(`Stock insuficiente para ${producto.nombre} (disponible: ${stockActual}).`);
                     }
 
@@ -240,12 +241,14 @@ export const saleRepository = {
                         total_bs_centavos: convertUsdCentavosToBsCentavos(totalItem, tasaBcv),
                     });
 
-                    productUpdates.push({
-                        producto,
-                        cantidad,
-                        stockAnterior: stockActual,
-                        stockNuevo: stockActual - cantidad,
-                    });
+                    if (!sinControlStock) {
+                        productUpdates.push({
+                            producto,
+                            cantidad,
+                            stockAnterior: stockActual,
+                            stockNuevo: stockActual - cantidad,
+                        });
+                    }
                 }
 
                 const subtotalBsCentavos = convertUsdCentavosToBsCentavos(subtotalUsdCentavos, tasaBcv);
