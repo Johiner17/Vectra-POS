@@ -103,18 +103,21 @@ const Settings = () => {
     const [busyBackup, setBusyBackup] = useState(false);
     const [pendingRestoreFile, setPendingRestoreFile] = useState(null);
     const fileInputRef = useRef(null);
+    const preparedShareRef = useRef(null);
 
     const loadAll = useCallback(async () => {
         try {
             setLoading(true);
             await backupService.requestPersistentStorage();
-            const [loadedConfig, status] = await Promise.all([
+            const [loadedConfig, status, prepared] = await Promise.all([
                 settingsRepository.getConfig(),
                 backupService.getStatus(),
+                backupService.prepareShareFile().catch(() => null),
             ]);
             setConfig(loadedConfig);
             setOriginalConfig(loadedConfig);
             setBackupStatus(status);
+            preparedShareRef.current = prepared;
         } catch (error) {
             console.error(error);
             toast.error('Error al cargar configuración local');
@@ -204,13 +207,18 @@ const Settings = () => {
     const handleShareBackup = async () => {
         setBusyBackup(true);
         try {
-            const res = await backupService.shareBackup();
-            const status = await backupService.getStatus();
+            const res = await backupService.shareBackup(preparedShareRef.current);
+            if (res?.cancelled) return;
+            const [status, prepared] = await Promise.all([
+                backupService.getStatus(),
+                backupService.prepareShareFile().catch(() => null),
+            ]);
             setBackupStatus(status);
+            preparedShareRef.current = prepared;
             if (res.shared) {
                 toast.success('Respaldo compartido correctamente');
-            } else {
-                toast.success(`Respaldo descargado (${res.counts.products} productos, ${res.counts.sales} ventas)`);
+            } else if (res.fallbackDownloaded) {
+                toast.success('Copia descargada (.json). Ya puedes adjuntarla en WhatsApp o Drive.');
             }
         } catch (error) {
             if (error?.name !== 'AbortError') {
@@ -317,105 +325,307 @@ const Settings = () => {
                     />
                     {openSections.backups && (
                         <div style={sectionBody}>
+                            {/* 4 StatBoxes en grilla 2x2 (o 4 en PC) */}
                             <div
                                 style={{
                                     display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))',
                                     gap: '0.75rem',
                                     marginBottom: '1rem',
                                 }}
                             >
-                                <StatBox label="Productos" value={backupStatus?.counts?.products ?? 0} />
-                                <StatBox label="Ventas" value={backupStatus?.counts?.sales ?? 0} />
-                                <StatBox label="Tasas BCV" value={backupStatus?.counts?.exchangeRates ?? 0} />
+                                <StatBox
+                                    label="Productos"
+                                    value={backupStatus?.counts?.products ?? 0}
+                                    unit="items activos"
+                                    dotColor="#3b82f6"
+                                />
+                                <StatBox
+                                    label="Ventas"
+                                    value={backupStatus?.counts?.sales ?? 0}
+                                    unit="registradas"
+                                    dotColor="#8b5cf6"
+                                />
+                                <StatBox
+                                    label="Tasas BCV"
+                                    value={backupStatus?.counts?.exchangeRates ?? 0}
+                                    unit="registros"
+                                    dotColor="#f59e0b"
+                                />
                                 <StatBox
                                     label="Almacenamiento"
                                     value={backupStatus?.persisted ? 'Protegido' : 'Estándar'}
-                                    accent={backupStatus?.persisted ? '#16a34a' : '#64748b'}
+                                    accent={backupStatus?.persisted ? '#059669' : '#64748b'}
+                                    dotColor={backupStatus?.persisted ? '#10b981' : '#94a3b8'}
+                                    checked={Boolean(backupStatus?.persisted)}
                                 />
                             </div>
 
+                            {/* Banner de última copia */}
                             <div
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '0.625rem',
+                                    justifyContent: 'space-between',
+                                    gap: '0.75rem',
                                     padding: '0.75rem 1rem',
-                                    borderRadius: '0.5rem',
-                                    backgroundColor: backupStatus?.lastBackupAt ? '#f0fdf4' : '#fffbeb',
-                                    border: `1px solid ${backupStatus?.lastBackupAt ? '#bbf7d0' : '#fde68a'}`,
-                                    marginBottom: '1rem',
-                                    fontSize: '0.8125rem',
-                                    color: backupStatus?.lastBackupAt ? '#166534' : '#92400e',
+                                    borderRadius: '0.875rem',
+                                    backgroundColor: backupStatus?.lastBackupAt ? '#ecfdf5' : '#fffbeb',
+                                    border: `1px solid ${backupStatus?.lastBackupAt ? '#a7f3d0' : '#fde68a'}`,
+                                    marginBottom: '0.875rem',
                                 }}
                             >
-                                {backupStatus?.lastBackupAt ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
-                                <span>
-                                    {backupStatus?.lastBackupAt
-                                        ? `Última copia realizada: ${new Date(backupStatus.lastBackupAt).toLocaleString('es-VE')}`
-                                        : 'Aún no has descargado una copia de seguridad en este dispositivo. Haz respaldo periódico para no perder tus ventas.'}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', minWidth: 0 }}>
+                                    <div style={{
+                                        width: '32px', height: '32px', borderRadius: '0.625rem',
+                                        backgroundColor: backupStatus?.lastBackupAt ? '#d1fae5' : '#fef3c7',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                        color: backupStatus?.lastBackupAt ? '#059669' : '#d97706'
+                                    }}>
+                                        {backupStatus?.lastBackupAt ? <ShieldCheck size={17} /> : <AlertTriangle size={17} />}
+                                    </div>
+                                    <div style={{ minWidth: 0 }}>
+                                        <p style={{ margin: 0, fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: backupStatus?.lastBackupAt ? '#047857' : '#b45309' }}>
+                                            Última copia realizada
+                                        </p>
+                                        <p style={{ margin: '0.1rem 0 0', fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {backupStatus?.lastBackupAt
+                                                ? new Date(backupStatus.lastBackupAt).toLocaleString('es-VE')
+                                                : 'Sin respaldo aún'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <span style={{
+                                    padding: '0.25rem 0.6rem',
+                                    borderRadius: '0.5rem',
+                                    backgroundColor: 'white',
+                                    border: `1px solid ${backupStatus?.lastBackupAt ? '#a7f3d0' : '#fde68a'}`,
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    color: backupStatus?.lastBackupAt ? '#047857' : '#b45309',
+                                    flexShrink: 0,
+                                }}>
+                                    {backupStatus?.lastBackupAt ? 'Al día' : 'Pendiente'}
                                 </span>
                             </div>
 
-                            <label
+                            {/* Tarjeta Switch: Respaldo automático diario */}
+                            <div
+                                onClick={() => handleToggleAutoBackup(!(backupStatus?.autoBackupEnabled ?? true))}
                                 style={{
                                     display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: '0.75rem',
-                                    padding: '0.75rem 1rem',
-                                    borderRadius: '0.5rem',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: '1rem',
+                                    padding: '0.875rem 1rem',
+                                    borderRadius: '0.875rem',
                                     backgroundColor: '#f8fafc',
                                     border: '1px solid #e2e8f0',
-                                    marginBottom: '1rem',
+                                    marginBottom: '1.125rem',
                                     cursor: 'pointer',
                                 }}
                             >
-                                <input
-                                    type="checkbox"
-                                    checked={backupStatus?.autoBackupEnabled ?? true}
-                                    onChange={(e) => handleToggleAutoBackup(e.target.checked)}
-                                    style={{ marginTop: '0.15rem', width: '17px', height: '17px', accentColor: '#2563eb', cursor: 'pointer' }}
-                                />
-                                <div>
-                                    <span style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>
-                                        Respaldo automático diario (.json)
-                                    </span>
-                                    <span style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginTop: '0.125rem' }}>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>
+                                            Respaldo automático diario
+                                        </span>
+                                        <span style={{
+                                            fontSize: '0.68rem', fontWeight: 600, color: '#64748b',
+                                            backgroundColor: '#e2e8f0', padding: '0.1rem 0.45rem', borderRadius: '0.35rem',
+                                            fontFamily: 'monospace'
+                                        }}>
+                                            .json
+                                        </span>
+                                    </div>
+                                    <span style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem', lineHeight: 1.35 }}>
                                         Descarga automáticamente una copia de seguridad al completar la primera venta del día.
                                     </span>
                                 </div>
-                            </label>
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={backupStatus?.autoBackupEnabled ?? true}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleAutoBackup(!(backupStatus?.autoBackupEnabled ?? true));
+                                    }}
+                                    style={{
+                                        width: '44px', height: '24px', borderRadius: '999px',
+                                        backgroundColor: (backupStatus?.autoBackupEnabled ?? true) ? '#4f46e5' : '#cbd5e1',
+                                        position: 'relative', border: 'none', cursor: 'pointer',
+                                        transition: 'background-color 0.2s', flexShrink: 0, padding: 0
+                                    }}
+                                >
+                                    <span style={{
+                                        position: 'absolute', top: '3px',
+                                        left: (backupStatus?.autoBackupEnabled ?? true) ? '23px' : '3px',
+                                        width: '18px', height: '18px', borderRadius: '50%',
+                                        backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                                        transition: 'left 0.2s'
+                                    }} />
+                                </button>
+                            </div>
 
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                            {/* Subencabezado Acciones de Datos */}
+                            <div style={{ marginBottom: '0.625rem' }}>
+                                <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em', color: '#64748b', textTransform: 'uppercase' }}>
+                                    Acciones de datos
+                                </span>
+                            </div>
+
+                            {/* Grilla 2x2 de botones tipo card iguales a la referencia */}
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                                gap: '0.75rem',
+                            }}>
+                                {/* 1. Descargar Copia (Principal) */}
                                 <button
                                     type="button"
                                     onClick={handleExportBackup}
                                     disabled={busyBackup}
-                                    style={backupBtnStyle('#2563eb')}
+                                    style={{
+                                        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                                        alignItems: 'stretch', textAlign: 'left',
+                                        padding: '0.95rem', borderRadius: '1rem', border: 'none',
+                                        background: 'linear-gradient(135deg, #4f46e5 0%, #2563eb 100%)',
+                                        color: 'white', cursor: busyBackup ? 'not-allowed' : 'pointer',
+                                        boxShadow: '0 8px 20px -6px rgba(37, 99, 235, 0.4)',
+                                        minHeight: '112px',
+                                    }}
                                 >
-                                    <Download size={16} />
-                                    Descargar Copia (.json)
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                        <div style={{
+                                            width: '32px', height: '32px', borderRadius: '0.625rem',
+                                            backgroundColor: 'rgba(255,255,255,0.2)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <Download size={17} color="#fff" />
+                                        </div>
+                                        <span style={{
+                                            fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.04em',
+                                            padding: '0.18rem 0.5rem', borderRadius: '0.4rem',
+                                            backgroundColor: 'rgba(255,255,255,0.22)', color: 'white'
+                                        }}>
+                                            PRINCIPAL
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.88rem', fontWeight: 700, lineHeight: 1.2 }}>Descargar Copia</div>
+                                        <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.82)', marginTop: '0.2rem' }}>Archivo local .json</div>
+                                    </div>
                                 </button>
 
+                                {/* 2. Enviar Copia (WhatsApp o Drive) */}
                                 <button
                                     type="button"
                                     onClick={handleShareBackup}
                                     disabled={busyBackup}
-                                    style={backupBtnStyle('#7c3aed')}
+                                    style={{
+                                        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                                        alignItems: 'stretch', textAlign: 'left',
+                                        padding: '0.95rem', borderRadius: '1rem',
+                                        border: '1px solid #e2e8f0', backgroundColor: 'white',
+                                        color: '#0f172a', cursor: busyBackup ? 'not-allowed' : 'pointer',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                                        minHeight: '112px',
+                                    }}
                                 >
-                                    <Share2 size={16} />
-                                    Enviar por WhatsApp / Drive
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                        <div style={{
+                                            width: '32px', height: '32px', borderRadius: '0.625rem',
+                                            backgroundColor: '#ecfdf5',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <Share2 size={16} color="#16a34a" />
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#16a34a' }} />
+                                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#2563eb' }} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.88rem', fontWeight: 700, lineHeight: 1.2 }}>Enviar Copia</div>
+                                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.2rem' }}>WhatsApp o Drive</div>
+                                    </div>
                                 </button>
 
+                                {/* 3. Exportar Ventas (.csv) */}
+                                <button
+                                    type="button"
+                                    onClick={handleExportCsv}
+                                    disabled={busyBackup}
+                                    style={{
+                                        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                                        alignItems: 'stretch', textAlign: 'left',
+                                        padding: '0.95rem', borderRadius: '1rem',
+                                        border: '1px solid #e2e8f0', backgroundColor: 'white',
+                                        color: '#0f172a', cursor: busyBackup ? 'not-allowed' : 'pointer',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                                        minHeight: '112px',
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                        <div style={{
+                                            width: '32px', height: '32px', borderRadius: '0.625rem',
+                                            backgroundColor: '#ecfdf5',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <FileSpreadsheet size={16} color="#16a34a" />
+                                        </div>
+                                        <span style={{
+                                            fontSize: '0.68rem', fontWeight: 700, fontFamily: 'monospace',
+                                            padding: '0.15rem 0.45rem', borderRadius: '0.4rem',
+                                            backgroundColor: '#ecfdf5', color: '#059669'
+                                        }}>
+                                            .csv
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.88rem', fontWeight: 700, lineHeight: 1.2 }}>Exportar Ventas</div>
+                                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.2rem' }}>Reporte para Excel</div>
+                                    </div>
+                                </button>
+
+                                {/* 4. Restaurar Copia (.json) */}
                                 <button
                                     type="button"
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={busyBackup}
-                                    style={backupBtnStyle('#0f172a')}
+                                    style={{
+                                        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                                        alignItems: 'stretch', textAlign: 'left',
+                                        padding: '0.95rem', borderRadius: '1rem',
+                                        border: '1.5px dashed #cbd5e1', backgroundColor: '#fafafa',
+                                        color: '#0f172a', cursor: busyBackup ? 'not-allowed' : 'pointer',
+                                        minHeight: '112px',
+                                    }}
                                 >
-                                    <Upload size={16} />
-                                    Restaurar Copia (.json)
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                        <div style={{
+                                            width: '32px', height: '32px', borderRadius: '0.625rem',
+                                            backgroundColor: '#fef3c7',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <Upload size={16} color="#d97706" />
+                                        </div>
+                                        <span style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                            fontSize: '0.65rem', fontWeight: 700,
+                                            padding: '0.18rem 0.45rem', borderRadius: '0.4rem',
+                                            backgroundColor: '#fef3c7', color: '#b45309'
+                                        }}>
+                                            <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#d97706' }} />
+                                            Precaución
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.88rem', fontWeight: 700, lineHeight: 1.2 }}>Restaurar Copia</div>
+                                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.2rem' }}>Reemplaza datos (.json)</div>
+                                    </div>
                                 </button>
+
                                 <input
                                     ref={fileInputRef}
                                     type="file"
@@ -423,16 +633,6 @@ const Settings = () => {
                                     onChange={handleFileSelected}
                                     style={{ display: 'none' }}
                                 />
-
-                                <button
-                                    type="button"
-                                    onClick={handleExportCsv}
-                                    disabled={busyBackup}
-                                    style={backupBtnStyle('#16a34a')}
-                                >
-                                    <FileSpreadsheet size={16} />
-                                    Exportar Ventas (.csv)
-                                </button>
                             </div>
                         </div>
                     )}
@@ -618,26 +818,26 @@ const Settings = () => {
     );
 };
 
-const StatBox = ({ label, value, accent = '#1e293b' }) => (
-    <div style={{ padding: '0.75rem', borderRadius: '0.5rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-        <p style={{ margin: 0, fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>{label}</p>
-        <p style={{ margin: '0.25rem 0 0', fontSize: '1.1rem', fontWeight: 700, color: accent }}>{value}</p>
+const StatBox = ({ label, value, unit = '', dotColor = '#3b82f6', accent = '#0f172a', checked = false }) => (
+    <div style={{
+        padding: '0.85rem 0.95rem',
+        borderRadius: '0.875rem',
+        backgroundColor: '#f8fafc',
+        border: '1px solid #e2e8f0',
+    }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>{label}</p>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: dotColor, flexShrink: 0 }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem', flexWrap: 'wrap' }}>
+            <span style={{ margin: 0, fontSize: checked ? '1rem' : '1.35rem', fontWeight: 800, color: accent, lineHeight: 1.1 }}>
+                {value}
+            </span>
+            {unit && <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{unit}</span>}
+            {checked && <ShieldCheck size={14} color={accent} style={{ alignSelf: 'center' }} />}
+        </div>
     </div>
 );
-
-const backupBtnStyle = (bg) => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    padding: '0.65rem 1rem',
-    borderRadius: '0.5rem',
-    border: 'none',
-    backgroundColor: bg,
-    color: 'white',
-    fontSize: '0.85rem',
-    fontWeight: 600,
-    cursor: 'pointer',
-});
 
 const sectionBody = {
     padding: '1.25rem',

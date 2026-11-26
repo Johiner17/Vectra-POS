@@ -146,6 +146,17 @@ export const backupService = {
     },
 
     /**
+     * Prepara el File .json listo para compartir de forma síncrona dentro del clic del usuario.
+     */
+    async prepareShareFile() {
+        const { payload, now, fileName, counts } = await buildBackupPayload();
+        const file = new File([JSON.stringify(payload, null, 2)], fileName, {
+            type: 'application/json',
+        });
+        return { file, now, counts };
+    },
+
+    /**
      * Exporta toda la base IndexedDB + personalización visual a un archivo JSON descargable.
      */
     async exportBackup() {
@@ -174,30 +185,45 @@ export const backupService = {
     },
 
     /**
-     * Comparte el archivo .json por WhatsApp / Drive usando Web Share API (o descarga si no está disponible).
+     * Comparte el archivo .json por WhatsApp / Drive usando Web Share API.
+     * Si el navegador bloquea compartir archivos .json (Permission denied / NotAllowedError),
+     * descarga automáticamente el .json para que el usuario pueda adjuntarlo manualmente.
      */
-    async shareBackup() {
-        const { payload, now, fileName, counts } = await buildBackupPayload();
-        const file = new File([JSON.stringify(payload, null, 2)], fileName, {
-            type: 'application/json',
-        });
+    async shareBackup(preBuilt = null) {
+        const prepared = preBuilt || (await this.prepareShareFile());
+        const { file, now, counts } = prepared;
 
-        if (this.canShareFiles() && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                files: [file],
-                title: 'Respaldo Vectra POS',
-                text: `Copia de seguridad de Vectra POS (${counts.products} productos, ${counts.sales} ventas).`,
-            });
-            await db.settings.put({
-                clave: LAST_BACKUP_KEY,
-                valor: now,
-                updated_at: now,
-            });
-            return { shared: true, exportedAt: now, counts };
+        let canShare = false;
+        try {
+            canShare = this.canShareFiles() && navigator.canShare({ files: [file] });
+        } catch {
+            canShare = false;
+        }
+
+        if (canShare) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'Respaldo Vectra POS',
+                    text: `Copia de seguridad de Vectra POS (${counts.products} productos, ${counts.sales} ventas).`,
+                });
+                await db.settings.put({
+                    clave: LAST_BACKUP_KEY,
+                    valor: now,
+                    updated_at: now,
+                });
+                return { shared: true, exportedAt: now, counts };
+            } catch (err) {
+                if (err?.name === 'AbortError') {
+                    return { cancelled: true };
+                }
+                // En desktop o navegadores que lanzan NotAllowedError ("Permission denied"),
+                // hacemos fallback automático a descarga directa del .json.
+            }
         }
 
         const res = await this.exportBackup();
-        return { shared: false, downloaded: true, ...res };
+        return { shared: false, fallbackDownloaded: true, ...res };
     },
 
     /**
