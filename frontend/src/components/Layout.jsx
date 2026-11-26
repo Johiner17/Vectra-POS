@@ -28,13 +28,12 @@ const navItems = [
     { icon: Palette,        label: 'Personalización',      path: '/customization' },
 ];
 
-/** Ítems que aparecen en la barra inferior de móvil */
+/** Ítems que aparecen en la barra inferior de móvil (el 5to botón abre el menú completo) */
 const bottomNavItems = [
     { icon: ShoppingCart,  label: 'POS',        path: '/pos' },
     { icon: Package,       label: 'Inventario', path: '/inventory' },
     { icon: ClipboardList, label: 'Ventas',     path: '/sales' },
     { icon: BarChart3,     label: 'Reportes',   path: '/reports' },
-    { icon: Settings,      label: 'Config',     path: '/settings' },
 ];
 
 const Layout = () => {
@@ -61,8 +60,6 @@ const Layout = () => {
     useEffect(() => {
         setSidebarOpen(false);
     }, [location.pathname]);
-
-    const currentLabel = navItems.find(i => location.pathname.startsWith(i.path))?.label || 'Vectra POS';
 
     /* ── Sidebar compartido (desktop siempre visible / móvil como drawer) ── */
     const SidebarContent = () => (
@@ -173,40 +170,6 @@ const Layout = () => {
                 // Deja espacio para barra inferior en móvil
                 paddingBottom: isMobile ? '64px' : 0,
             }}>
-                {/* Header */}
-                <header style={{
-                    backgroundColor: 'white',
-                    padding: isMobile ? '0.75rem 1rem' : '1rem 2rem',
-                    borderBottom: '1px solid #e2e8f0',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexShrink: 0,
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        {/* Hamburger en móvil */}
-                        {isMobile && (
-                            <button
-                                onClick={() => setSidebarOpen(true)}
-                                style={{ background: 'none', border: 'none', color: '#1e293b', cursor: 'pointer', padding: '0.25rem', display: 'flex' }}
-                                aria-label="Abrir menú"
-                            >
-                                <Menu size={22} />
-                            </button>
-                        )}
-                        <h2 style={{ fontSize: isMobile ? '1rem' : '1.25rem', fontWeight: 600, color: '#1e293b', margin: 0 }}>
-                            {currentLabel}
-                        </h2>
-                    </div>
-                    {!isMobile && (
-                        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                            {new Date().toLocaleDateString('es-VE', {
-                                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-                            })}
-                        </span>
-                    )}
-                </header>
-
                 {/* Contenido de la página */}
                 <div style={{ flex: 1, padding: isMobile ? '1rem' : '2rem', overflow: 'auto' }}>
                     <Outlet />
@@ -253,6 +216,30 @@ const Layout = () => {
                             </Link>
                         );
                     })}
+                    <button
+                        type="button"
+                        onClick={() => setSidebarOpen(true)}
+                        style={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '0.5rem 0.25rem',
+                            background: 'none',
+                            border: 'none',
+                            color: sidebarOpen ? '#2563eb' : '#94a3b8',
+                            WebkitTapHighlightColor: 'transparent',
+                            minHeight: '56px',
+                            cursor: 'pointer',
+                        }}
+                        aria-label="Más opciones"
+                    >
+                        <Menu size={22} />
+                        <span style={{ fontSize: '0.625rem', marginTop: '0.25rem', fontWeight: sidebarOpen ? 700 : 400 }}>
+                            Más
+                        </span>
+                    </button>
                 </nav>
             )}
         </div>

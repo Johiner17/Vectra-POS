@@ -384,7 +384,7 @@ const POS = () => {
             flexDirection: isMobile ? 'column' : undefined,
             gridTemplateColumns: isMobile ? undefined : (isTablet ? '1fr 310px' : '1fr 380px'),
             gap: isMobile ? '1rem' : '1.5rem',
-            height: isMobile ? 'auto' : 'calc(100vh - 130px)',
+            height: isMobile ? 'auto' : 'calc(100vh - 4rem)',
             paddingBottom: isMobile && cart.length > 0 ? '5rem' : 0,
         }}>
 

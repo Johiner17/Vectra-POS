@@ -129,22 +129,14 @@ const Reports = () => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             
-            {/* Header / Filtros */}
+            {/* Selectores de Período */}
             <div style={{ 
                 display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
+                justifyContent: 'flex-end',
+                alignItems: 'center', 
                 flexWrap: 'wrap',
                 gap: '1rem'
             }}>
-                <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>Reportería Avanzada</h1>
-                    <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                        Visualiza de manera exacta y detallada las métricas financieras de tu negocio.
-                    </p>
-                </div>
-                
-                {/* Selectores de Período */}
                 <div style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
