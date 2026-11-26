@@ -11,6 +11,9 @@ const POS = () => {
     const isMobile = useIsMobile(768);
     const isTablet = useIsMobile(1024);
     const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
+    const [cartDragY, setCartDragY] = useState(0);
+    const cartTouchStartY = useRef(null);
+    const cartItemsRef = useRef(null);
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -154,17 +157,61 @@ const POS = () => {
     const ProductIcon = iconsMap[posConfig.icon] || ShoppingCart;
     const totalItemsCount = cart.reduce((a, i) => a + i.quantity, 0);
 
+    const handleCartTouchStart = (e) => {
+        if (!isMobile) return;
+        const listEl = cartItemsRef.current;
+        const atTop = !listEl || listEl.scrollTop <= 0;
+        const touchedList = listEl && listEl.contains(e.target);
+        if (!touchedList || atTop) {
+            cartTouchStartY.current = e.touches[0].clientY;
+        } else {
+            cartTouchStartY.current = null;
+        }
+    };
+
+    const handleCartTouchMove = (e) => {
+        if (!isMobile || cartTouchStartY.current === null) return;
+        const deltaY = e.touches[0].clientY - cartTouchStartY.current;
+        if (deltaY > 0) {
+            setCartDragY(deltaY);
+        }
+    };
+
+    const handleCartTouchEnd = () => {
+        if (!isMobile) return;
+        if (cartDragY > 70) {
+            setIsMobileCartOpen(false);
+        }
+        setCartDragY(0);
+        cartTouchStartY.current = null;
+    };
+
     const renderCartPanel = () => (
-        <div style={{
-            backgroundColor: 'white',
-            borderRadius: isMobile ? '1.25rem 1.25rem 0 0' : '1rem',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            display: 'flex', flexDirection: 'column', overflow: 'hidden',
-            height: isMobile ? '85dvh' : '100%',
-            width: '100%'
-        }}>
+        <div
+            onTouchStart={handleCartTouchStart}
+            onTouchMove={handleCartTouchMove}
+            onTouchEnd={handleCartTouchEnd}
+            style={{
+                backgroundColor: 'white',
+                borderRadius: isMobile ? '1.25rem 1.25rem 0 0' : '1rem',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                height: isMobile ? '85dvh' : '100%',
+                width: '100%',
+                overscrollBehaviorY: 'contain',
+                transform: isMobile && cartDragY > 0 ? `translateY(${cartDragY}px)` : undefined,
+                transition: cartDragY === 0 ? 'transform 0.2s ease-out' : 'none',
+            }}
+        >
+            {/* Indicador visual para deslizar hacia abajo en móvil */}
+            {isMobile && (
+                <div style={{ paddingTop: '0.625rem', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: '42px', height: '4px', borderRadius: '999px', backgroundColor: '#cbd5e1' }} />
+                </div>
+            )}
+
             {/* Header del carrito */}
-            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: isMobile ? '0.625rem 1.25rem 0.875rem' : '1rem 1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <ShoppingCart size={20} color="#2563eb" />
                     <span style={{ fontWeight: 700, color: '#1e293b' }}>Carrito</span>
@@ -193,7 +240,7 @@ const POS = () => {
             </div>
 
             {/* Items del carrito */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem' }}>
+            <div ref={cartItemsRef} style={{ flex: 1, overflowY: 'auto', padding: '0.75rem', overscrollBehaviorY: 'contain' }}>
                 {cart.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '2rem', color: '#cbd5e1' }}>
                         <ShoppingCart size={40} style={{ marginBottom: '0.75rem' }} />
@@ -355,19 +402,22 @@ const POS = () => {
                     gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(125px, 1fr))' : 'repeat(auto-fill, minmax(140px, 1fr))',
                     gap: '0.75rem', overflowY: isMobile ? 'visible' : 'auto', paddingBottom: '0.5rem'
                 }}>
-                    {products.map(product => (
+                    {products.map(product => {
+                        const qtyInCart = cart.find(i => i.id === product.id)?.quantity || 0;
+                        return (
                         <div
                             key={product.id}
                             onClick={() => addToCart(product)}
                             style={{
+                                position: 'relative',
                                 backgroundColor: 'white', borderRadius: '0.75rem',
                                 padding: '0.875rem', cursor: product.stock_actual > 0 ? 'pointer' : 'not-allowed',
-                                border: '2px solid #f1f5f9', transition: 'all 0.15s',
+                                border: `2px solid ${qtyInCart > 0 ? '#2563eb' : '#f1f5f9'}`, transition: 'all 0.15s',
                                 opacity: product.stock_actual <= 0 ? 0.5 : 1,
                                 boxShadow: '0 1px 3px rgba(0,0,0,0.07)'
                             }}
                             onMouseEnter={e => { if (product.stock_actual > 0) e.currentTarget.style.borderColor = '#2563eb'; }}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = '#f1f5f9'}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = qtyInCart > 0 ? '#2563eb' : '#f1f5f9'}
                         >
                             {/* Ícono / color placeholder u Opcion de Imagen */}
                             <div style={{
@@ -407,11 +457,33 @@ const POS = () => {
                                     Bs. {((product.precio_venta_usd_centavos / 100) * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
                             )}
-                            <p style={{ fontSize: '0.7rem', color: product.stock_actual <= product.stock_minimo ? '#ef4444' : '#94a3b8' }}>
+                            <p style={{ fontSize: '0.7rem', color: product.stock_actual <= product.stock_minimo ? '#ef4444' : '#94a3b8', paddingRight: qtyInCart > 0 ? '2.25rem' : 0 }}>
                                 Stock: {product.stock_actual}
                             </p>
+                            {qtyInCart > 0 && (
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '0.625rem',
+                                    right: '0.625rem',
+                                    minWidth: '26px',
+                                    height: '26px',
+                                    padding: '0 6px',
+                                    borderRadius: '0.5rem',
+                                    backgroundColor: '#2563eb',
+                                    color: 'white',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.35)'
+                                }}>
+                                    {qtyInCart}
+                                </div>
+                            )}
                         </div>
-                    ))}
+                        );
+                    })}
                     {products.length === 0 && !loading && (
                         <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
                             <Search size={40} style={{ marginBottom: '0.75rem', opacity: 0.4 }} />
