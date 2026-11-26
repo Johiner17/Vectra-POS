@@ -79,7 +79,7 @@ const CustomTooltip = ({ active, payload, label, period }) => {
 const PAYMENT_LABELS = {
     efectivo_usd: 'Efectivo USD',
     efectivo_bs: 'Efectivo Bs.',
-    transferencia_usd: 'Transferencia USD',
+    transferencia_usd: 'Binance USDT',
     transferencia_bs: 'Pago Móvil / Transf. Bs.',
     punto_venta: 'Punto de Venta',
     credito: 'Crédito'

@@ -9,7 +9,7 @@ const PAYMENT_METHODS = [
     { id: 'transferencia_bs', label: 'Pago Móvil', moneda: 'BS', icon: CreditCard, color: '#db2777' },
     { id: 'efectivo_bs', label: 'Efectivo Bs.', moneda: 'BS', icon: Banknote, color: '#ca8a04' },
     { id: 'efectivo_usd', label: 'Efectivo USD', moneda: 'USD', icon: DollarSign, color: '#16a34a' },
-    { id: 'transferencia_usd', label: 'Transferencia USD', moneda: 'USD', icon: CreditCard, color: '#7c3aed' },
+    { id: 'transferencia_usd', label: 'Binance USDT', moneda: 'USD', icon: CreditCard, color: '#7c3aed' },
 ];
 
 // Methods available inside "Mixto" (same list, reused for each partial payment)
