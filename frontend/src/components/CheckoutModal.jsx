@@ -5,18 +5,18 @@ import { saleRepository } from '../services/saleRepository';
 import { formatBs } from '../utils/formatters';
 
 const PAYMENT_METHODS = [
-    { id: 'efectivo_usd', label: 'Efectivo USD', moneda: 'USD', icon: DollarSign, color: '#16a34a' },
-    { id: 'efectivo_bs', label: 'Efectivo Bs.', moneda: 'BS', icon: Banknote, color: '#ca8a04' },
     { id: 'punto_venta', label: 'Punto de Venta', moneda: 'BS', icon: CreditCard, color: '#2563eb' },
+    { id: 'transferencia_bs', label: 'Pago Móvil', moneda: 'BS', icon: CreditCard, color: '#db2777' },
+    { id: 'efectivo_bs', label: 'Efectivo Bs.', moneda: 'BS', icon: Banknote, color: '#ca8a04' },
+    { id: 'efectivo_usd', label: 'Efectivo USD', moneda: 'USD', icon: DollarSign, color: '#16a34a' },
     { id: 'transferencia_usd', label: 'Transferencia USD', moneda: 'USD', icon: CreditCard, color: '#7c3aed' },
-    { id: 'transferencia_bs', label: 'Pago movil', moneda: 'BS', icon: CreditCard, color: '#db2777' },
 ];
 
 // Methods available inside "Mixto" (same list, reused for each partial payment)
 const MIXTO_AVAILABLE_METHODS = PAYMENT_METHODS;
 
 const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) => {
-    const [selectedMethod, setSelectedMethod] = useState('efectivo_usd');
+    const [selectedMethod, setSelectedMethod] = useState('punto_venta');
     const [montoRecibido, setMontoRecibido] = useState('');
     const [referencia, setReferencia] = useState('');
     const [processing, setProcessing] = useState(false);
@@ -26,15 +26,15 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
     // ── Mixto state ──
     const [isMixto, setIsMixto] = useState(false);
     const [mixtoPayments, setMixtoPayments] = useState([
-        { methodId: 'efectivo_usd', monto: '', referencia: '' },
-        { methodId: 'efectivo_bs', monto: '', referencia: '' },
+        { methodId: 'punto_venta', monto: '', referencia: '' },
+        { methodId: 'transferencia_bs', monto: '', referencia: '' },
     ]);
 
     const totalBs = totalUsd * tasaBcv;
 
     useEffect(() => {
         if (!isOpen) {
-            setSelectedMethod('efectivo_usd');
+            setSelectedMethod('punto_venta');
             setMontoRecibido('');
             setReferencia('');
             setVuelto(0);
@@ -42,8 +42,8 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
             setProcessing(false);
             setIsMixto(false);
             setMixtoPayments([
-                { methodId: 'efectivo_usd', monto: '', referencia: '' },
-                { methodId: 'efectivo_bs', monto: '', referencia: '' },
+                { methodId: 'punto_venta', monto: '', referencia: '' },
+                { methodId: 'transferencia_bs', monto: '', referencia: '' },
             ]);
         }
     }, [isOpen]);
@@ -193,32 +193,68 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
     if (saleResult) {
         return (
             <div style={overlayStyle}>
-                <div style={{ ...modalWrapperStyle, maxWidth: '400px' }}>
-                    <div style={{ ...modalStyle, textAlign: 'center', maxHeight: 'none', overflowY: 'visible' }}>
-                        <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                            <Check size={32} color="#16a34a" />
+                <div style={{ ...modalWrapperStyle, maxWidth: 'min(420px, calc(100vw - 1.5rem))', borderRadius: '1.25rem' }}>
+                    <div style={{ ...modalStyle, textAlign: 'center', maxHeight: 'none', overflowY: 'visible', padding: 'clamp(1.5rem, 4vw, 2.25rem)' }}>
+                        <div style={{
+                            width: '72px', height: '72px', borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #dcfce7, #bbf7d0)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            margin: '0 auto 1.125rem',
+                            boxShadow: '0 8px 20px rgba(22, 163, 74, 0.2)'
+                        }}>
+                            <Check size={36} color="#16a34a" strokeWidth={2.75} />
                         </div>
-                        <h2 style={{ color: '#16a34a', marginBottom: '0.5rem' }}>¡Venta Completada!</h2>
-                        <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
+                        <h2 style={{ color: '#0f172a', fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' }}>
+                            ¡Venta Completada!
+                        </h2>
+                        <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem', fontWeight: 500 }}>
                             Factura #{saleResult.numero_factura}
                         </p>
-                        <div style={{ backgroundColor: '#f8fafc', borderRadius: '0.5rem', padding: '1rem', marginBottom: '1.5rem', textAlign: 'left' }}>
-                            <div style={rowStyle}>
+
+                        <div style={{
+                            backgroundColor: '#f8fafc',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '0.875rem',
+                            padding: '1.125rem 1.25rem',
+                            marginBottom: '1.5rem',
+                            textAlign: 'left'
+                        }}>
+                            <div style={{ ...rowStyle, fontSize: '1rem', color: '#334155' }}>
                                 <span>Total USD:</span>
-                                <strong>${(saleResult.total_usd_centavos / 100).toFixed(2)}</strong>
+                                <strong style={{ color: '#2563eb', fontSize: '1.125rem' }}>
+                                    ${(saleResult.total_usd_centavos / 100).toFixed(2)}
+                                </strong>
                             </div>
-                            <div style={rowStyle}>
+                            <div style={{ ...rowStyle, fontSize: '1rem', color: '#334155', marginBottom: (!isMixto && parseFloat(montoRecibido) > 0 && vuelto > 0) ? '0.5rem' : 0 }}>
                                 <span>Total Bs.:</span>
-                                <strong>Bs. {formatBs(saleResult.total_bs_centavos / 100)}</strong>
+                                <strong style={{ color: '#16a34a', fontSize: '1.125rem' }}>
+                                    Bs. {formatBs(saleResult.total_bs_centavos / 100)}
+                                </strong>
                             </div>
                             {!isMixto && parseFloat(montoRecibido) > 0 && vuelto > 0 && (
-                                <div style={{ ...rowStyle, color: '#16a34a', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #e2e8f0' }}>
+                                <div style={{ ...rowStyle, color: '#16a34a', marginTop: '0.625rem', paddingTop: '0.625rem', borderTop: '1px solid #e2e8f0', marginBottom: 0 }}>
                                     <span>Vuelto ({isBs ? 'Bs.' : 'USD'}):</span>
                                     <strong>{isBs ? `Bs. ${formatBs(vuelto)}` : `$ ${vuelto.toFixed(2)}`}</strong>
                                 </div>
                             )}
                         </div>
-                        <button onClick={onClose} className="btn btn-primary" style={{ width: '100%' }}>
+
+                        <button
+                            onClick={onClose}
+                            style={{
+                                width: '100%',
+                                padding: '1.125rem 1.5rem',
+                                borderRadius: '0.875rem',
+                                border: 'none',
+                                background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                                color: 'white',
+                                fontSize: '1.05rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                boxShadow: '0 6px 18px rgba(37, 99, 235, 0.3)',
+                                transition: 'transform 0.1s'
+                            }}
+                        >
                             Nueva Venta
                         </button>
                     </div>
@@ -337,7 +373,6 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                                         outline: 'none', transition: 'border-color 0.15s',
                                         backgroundColor: esPagoInsuficiente ? '#fff5f5' : 'white'
                                     }}
-                                    autoFocus
                                 />
                                 {esPagoInsuficiente && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginTop: '0.5rem', padding: '0.5rem 0.75rem', backgroundColor: '#fef2f2', borderRadius: '0.5rem', border: '1px solid #fecaca' }}>

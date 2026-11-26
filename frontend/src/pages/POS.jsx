@@ -44,8 +44,8 @@ const POS = () => {
             image: savedImage
         });
         
-        // Focus en la búsqueda al cargar
-        if (searchRef.current) searchRef.current.focus();
+        // Focus en la búsqueda solo en pantallas grandes (no abrir teclado automático en móvil)
+        if (window.innerWidth >= 768 && searchRef.current) searchRef.current.focus();
     }, []);
 
     const fetchRate = async () => {
@@ -233,15 +233,15 @@ const POS = () => {
                                 )}
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <p style={{ fontSize: isMobile ? '0.95rem' : '0.8rem', fontWeight: 600, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {item.nombre}
                                 </p>
-                                <p style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                    ${precio.toFixed(2)} × {item.quantity} = <strong>${subtotalItem.toFixed(2)}</strong>
+                                <p style={{ fontSize: isMobile ? '1.15rem' : '0.75rem', color: '#475569', marginTop: '0.1rem' }}>
+                                    ${precio.toFixed(2)} × {item.quantity} = <strong style={{ color: '#1e293b' }}>${subtotalItem.toFixed(2)}</strong>
                                 </p>
                                 {tasaBcv > 0 && (
-                                    <p style={{ fontSize: '0.7rem', color: '#16a34a', fontWeight: 600 }}>
-                                        Bs. {(subtotalItem * tasaBcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    <p style={{ fontSize: isMobile ? '1.35rem' : '0.7rem', color: '#16a34a', fontWeight: 700, marginTop: '0.1rem' }}>
+                                        Bs. {formatBs(subtotalItem * tasaBcv)}
                                     </p>
                                 )}
                             </div>
@@ -274,22 +274,26 @@ const POS = () => {
             {/* Totales y botón de cobro */}
             <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid #f1f5f9', paddingBottom: isMobile ? 'calc(1rem + env(safe-area-inset-bottom, 0px))' : '1rem' }}>
                 <div style={{ marginBottom: '0.75rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: isMobile ? '1rem' : '0.875rem', color: '#64748b', marginBottom: '0.25rem' }}>
                         <span>Subtotal:</span>
                         <span>${subtotal.toFixed(2)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: isMobile ? '1rem' : '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>
                         <span>IVA (16%):</span>
                         <span>${iva.toFixed(2)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1.25rem', color: '#1e293b', paddingTop: '0.5rem', borderTop: '2px solid #f1f5f9' }}>
-                        <span>Total USD:</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontWeight: 700, fontSize: isMobile ? '1.85rem' : '1.25rem', color: '#1e293b', paddingTop: '0.5rem', borderTop: '2px solid #f1f5f9' }}>
+                        <span style={{ fontSize: isMobile ? '1.25rem' : '1.25rem' }}>Total USD:</span>
                         <span style={{ color: '#2563eb' }}>${total.toFixed(2)}</span>
                     </div>
                     {tasaBcv > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.25rem' }}>
-                            <span>Total Bs. (×{formatBs(tasaBcv)}):</span>
-                            <span>Bs. {formatBs(total * tasaBcv)}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.35rem' }}>
+                            <span style={{ fontSize: isMobile ? '1rem' : '0.8rem', color: '#64748b', fontWeight: 600 }}>
+                                Total Bs. (×{formatBs(tasaBcv)}):
+                            </span>
+                            <span style={{ fontSize: isMobile ? '2.15rem' : '0.85rem', fontWeight: 800, color: '#16a34a', lineHeight: 1.15 }}>
+                                Bs. {formatBs(total * tasaBcv)}
+                            </span>
                         </div>
                     )}
                 </div>
