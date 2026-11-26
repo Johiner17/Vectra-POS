@@ -8,31 +8,7 @@ import { DollarSign, TrendingUp, Package, AlertTriangle, Clock, RefreshCw } from
 import { saleRepository } from '../services/saleRepository';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { formatBs } from '../utils/formatters';
-
-const StatCard = ({ title, value, subtitle, icon: Icon, color, loading }) => (
-    <div style={{
-        backgroundColor: 'white', borderRadius: '1rem', padding: '1.5rem',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-        display: 'flex', alignItems: 'flex-start', gap: '1rem',
-        borderLeft: `4px solid ${color}`
-    }}>
-        <div style={{
-            padding: '0.75rem', borderRadius: '0.75rem',
-            backgroundColor: `${color}18`, flexShrink: 0
-        }}>
-            <Icon size={22} color={color} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.25rem', fontWeight: 500 }}>{title}</p>
-            {loading ? (
-                <div style={{ height: '28px', backgroundColor: '#f1f5f9', borderRadius: '0.25rem', width: '70%' }} />
-            ) : (
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', lineHeight: 1 }}>{value}</h3>
-            )}
-            {subtitle && <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>{subtitle}</p>}
-        </div>
-    </div>
-);
+import StatCard from '../components/StatCard';
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
