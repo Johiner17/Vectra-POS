@@ -67,7 +67,8 @@ const Reports = () => {
     const [activeTab, setActiveTab] = useState('mas_vendidos'); // 'mas_vendidos' | 'menos_vendidos'
 
     const fetchStats = async (selectedPeriod) => {
-        setLoading(true);
+        // Solo mostrar skeleton en la carga inicial para evitar parpadeos al cambiar de período
+        if (!data) setLoading(true);
         try {
             const reportData = await saleRepository.getReportStats(selectedPeriod);
             setData(reportData);
