@@ -156,7 +156,7 @@ const LicenseGate = ({ children }) => {
                                 required
                                 value={businessName}
                                 onChange={(e) => setBusinessName(e.target.value)}
-                                placeholder="Ej: Puesto de Sopas El Sabor"
+                                placeholder="Ej: Restaurante + nombre"
                                 style={{
                                     width: '100%',
                                     padding: '0.75rem 0.75rem 0.75rem 2.5rem',
