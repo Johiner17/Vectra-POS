@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Eye, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Eye, X, ChevronLeft, ChevronRight, DollarSign, ShoppingBag, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { saleRepository } from '../services/saleRepository';
 import { formatBs } from '../utils/formatters';
+import { useIsMobile } from '../hooks/useIsMobile';
+import StatCard from '../components/StatCard';
 
 // ─── Modal de detalle de venta ───────────────────────────────────────────────
 const SaleDetailModal = ({ sale, onClose }) => {
@@ -115,6 +117,7 @@ const PAGE_SIZE = 20;
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 const Sales = () => {
+    const isMobile = useIsMobile(768);
     const [sales, setSales] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedSale, setSelectedSale] = useState(null);
@@ -173,75 +176,139 @@ const Sales = () => {
         : sales;
 
     const totalUsd = filteredSales.reduce((a, s) => a + (s.total_usd_centavos / 100), 0);
+    const totalBs = filteredSales.reduce((a, s) => a + (s.total_bs_centavos / 100), 0);
     const totalPages = Math.max(1, Math.ceil(filteredSales.length / PAGE_SIZE));
     const safePage = Math.min(currentPage, totalPages);
     const startIndex = (safePage - 1) * PAGE_SIZE;
     const paginatedSales = filteredSales.slice(startIndex, startIndex + PAGE_SIZE);
+    const hasActiveFilters = Boolean(filters.fechaInicio || filters.fechaFin || filters.search);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
             {/* Header */}
             <div>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b' }}>Historial de Ventas</h1>
-                <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Consulta y gestiona todas las transacciones</p>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>Historial de Ventas</h1>
+                <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '0.25rem', marginBottom: 0 }}>
+                    Consulta y gestiona todas las transacciones
+                </p>
+            </div>
+
+            {/* KPIs estilo Full-Bleed Moderno */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+                <StatCard
+                    title="Total Facturado"
+                    value={`$${totalUsd.toFixed(2)}`}
+                    subtitle={`Equivalente: Bs. ${formatBs(totalBs)}`}
+                    icon={DollarSign}
+                    color="#2563eb"
+                    loading={loading && sales.length === 0}
+                />
+                <StatCard
+                    title="Ventas Registradas"
+                    value={filteredSales.length}
+                    subtitle={hasActiveFilters ? 'Coinciden con el filtro actual' : 'Total en el historial'}
+                    icon={ShoppingBag}
+                    color="#16a34a"
+                    loading={loading && sales.length === 0}
+                />
             </div>
 
             {/* Filtros */}
             <div style={{
-                backgroundColor: 'white', borderRadius: '0.75rem', padding: '1rem 1.25rem',
+                backgroundColor: 'white', borderRadius: '1rem', padding: isMobile ? '1rem' : '1rem 1.25rem',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center'
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: '0.75rem',
+                flexWrap: 'wrap',
+                alignItems: isMobile ? 'stretch' : 'flex-end'
             }}>
-                <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
-                    <Search size={16} style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                    <input
-                        type="text"
-                        placeholder="Buscar por # factura..."
-                        value={filters.search}
-                        onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
-                        style={{ width: '100%', padding: '0.5rem 0.5rem 0.5rem 2rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.875rem' }}
-                    />
+                <div style={{ position: 'relative', flex: isMobile ? 'none' : 1, minWidth: isMobile ? '100%' : '200px' }}>
+                    {!isMobile && (
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: '0.3rem' }}>
+                            Buscar
+                        </label>
+                    )}
+                    <div style={{ position: 'relative' }}>
+                        <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                        <input
+                            type="text"
+                            placeholder="Buscar por # factura..."
+                            value={filters.search}
+                            onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
+                            style={{
+                                width: '100%', padding: '0.6rem 0.75rem 0.6rem 2.25rem',
+                                border: '1.5px solid #e2e8f0', borderRadius: '0.625rem',
+                                fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box'
+                            }}
+                        />
+                    </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500 }}>Desde:</label>
-                    <input
-                        type="date"
-                        value={filters.fechaInicio}
-                        onChange={e => setFilters(f => ({ ...f, fechaInicio: e.target.value }))}
-                        style={{ padding: '0.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.875rem' }}
-                    />
+
+                {/* Desde y Hasta en la misma línea con etiqueta arriba */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '0.625rem',
+                    width: isMobile ? '100%' : 'auto',
+                }}>
+                    <div style={{ minWidth: 0 }}>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: '0.3rem' }}>
+                            Desde
+                        </label>
+                        <input
+                            type="date"
+                            value={filters.fechaInicio}
+                            onChange={e => setFilters(f => ({ ...f, fechaInicio: e.target.value }))}
+                            style={{
+                                width: '100%', padding: '0.55rem 0.5rem',
+                                border: '1.5px solid #e2e8f0', borderRadius: '0.625rem',
+                                fontSize: '0.825rem', outline: 'none', boxSizing: 'border-box',
+                                backgroundColor: 'white', color: '#1e293b'
+                            }}
+                        />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: '0.3rem' }}>
+                            Hasta
+                        </label>
+                        <input
+                            type="date"
+                            value={filters.fechaFin}
+                            onChange={e => setFilters(f => ({ ...f, fechaFin: e.target.value }))}
+                            style={{
+                                width: '100%', padding: '0.55rem 0.5rem',
+                                border: '1.5px solid #e2e8f0', borderRadius: '0.625rem',
+                                fontSize: '0.825rem', outline: 'none', boxSizing: 'border-box',
+                                backgroundColor: 'white', color: '#1e293b'
+                            }}
+                        />
+                    </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500 }}>Hasta:</label>
-                    <input
-                        type="date"
-                        value={filters.fechaFin}
-                        onChange={e => setFilters(f => ({ ...f, fechaFin: e.target.value }))}
-                        style={{ padding: '0.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.875rem' }}
-                    />
-                </div>
-                {(filters.fechaInicio || filters.fechaFin || filters.search) && (
-                    <button
-                        onClick={() => setFilters({ fechaInicio: '', fechaFin: '', search: '' })}
-                        style={{ padding: '0.5rem 0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', background: 'white', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}
-                    >
-                        Limpiar filtros
-                    </button>
+
+                {hasActiveFilters && (
+                    <div style={{ display: 'flex', justifyContent: isMobile ? 'center' : 'flex-end', width: isMobile ? '100%' : 'auto' }}>
+                        <button
+                            onClick={() => setFilters({ fechaInicio: '', fechaFin: '', search: '' })}
+                            style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                                padding: '0.55rem 1rem',
+                                border: '1.5px solid #e2e8f0', borderRadius: '0.625rem',
+                                backgroundColor: '#f8fafc', cursor: 'pointer',
+                                fontSize: '0.8rem', fontWeight: 600, color: '#475569',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            <RotateCcw size={14} />
+                            Limpiar filtros
+                        </button>
+                    </div>
                 )}
             </div>
 
-            {/* Resumen rápido */}
-            {filteredSales.length > 0 && (
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                        <strong style={{ color: '#1e293b' }}>{filteredSales.length}</strong> ventas encontradas ·
-                        Total: <strong style={{ color: '#2563eb' }}>${totalUsd.toFixed(2)} USD</strong>
-                    </span>
-                </div>
-            )}
-
-            {/* Tabla */}
-            <div className="table-responsive" style={{ backgroundColor: 'white', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+            {/* Tabla + Paginación (paginación fuera del scroll horizontal para evitar fondo blanco al deslizar) */}
+            <div style={{ backgroundColor: 'white', borderRadius: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+                <div className="table-responsive">
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead style={{ backgroundColor: '#f8fafc' }}>
                         <tr>
@@ -340,29 +407,31 @@ const Sales = () => {
                         ))}
                     </tbody>
                 </table>
+                </div>
 
                 {/* Paginación */}
                 {!loading && filteredSales.length > PAGE_SIZE && (
                     <div style={{
                         display: 'flex',
-                        justifyContent: 'space-between',
+                        flexDirection: isMobile ? 'column' : 'row',
+                        justifyContent: isMobile ? 'center' : 'space-between',
                         alignItems: 'center',
-                        flexWrap: 'wrap',
                         gap: '0.75rem',
                         padding: '0.875rem 1rem',
                         borderTop: '1px solid #f1f5f9',
-                        backgroundColor: '#f8fafc'
+                        backgroundColor: '#f8fafc',
+                        textAlign: isMobile ? 'center' : 'left'
                     }}>
                         <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
                             Mostrando <strong>{startIndex + 1}–{Math.min(startIndex + PAGE_SIZE, filteredSales.length)}</strong> de <strong>{filteredSales.length}</strong>
                         </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                             <button
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                 disabled={safePage <= 1}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: '0.25rem',
-                                    padding: '0.45rem 0.75rem', borderRadius: '0.5rem',
+                                    padding: '0.5rem 0.875rem', borderRadius: '0.5rem',
                                     border: '1px solid #e2e8f0',
                                     backgroundColor: safePage <= 1 ? '#f1f5f9' : 'white',
                                     color: safePage <= 1 ? '#94a3b8' : '#334155',
@@ -373,7 +442,7 @@ const Sales = () => {
                                 <ChevronLeft size={16} />
                                 Anterior
                             </button>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#334155', padding: '0 0.25rem' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', padding: '0 0.35rem' }}>
                                 {safePage} / {totalPages}
                             </span>
                             <button
@@ -381,7 +450,7 @@ const Sales = () => {
                                 disabled={safePage >= totalPages}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: '0.25rem',
-                                    padding: '0.45rem 0.75rem', borderRadius: '0.5rem',
+                                    padding: '0.5rem 0.875rem', borderRadius: '0.5rem',
                                     border: '1px solid #e2e8f0',
                                     backgroundColor: safePage >= totalPages ? '#f1f5f9' : 'white',
                                     color: safePage >= totalPages ? '#94a3b8' : '#334155',
