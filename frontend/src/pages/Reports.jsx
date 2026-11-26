@@ -128,50 +128,63 @@ const Reports = () => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
             
-            {/* Selectores de Período */}
+            {/* Encabezado + Selector de Período */}
             <div style={{ 
                 display: 'flex', 
-                justifyContent: 'flex-end',
+                justifyContent: 'space-between',
                 alignItems: 'center', 
                 flexWrap: 'wrap',
                 gap: '1rem'
             }}>
-                <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    backgroundColor: 'white',
-                    padding: '0.25rem',
-                    borderRadius: '0.75rem',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                    overflowX: 'auto',
-                    maxWidth: '100%'
+                <div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>Reportería</h1>
+                    <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '0.25rem', marginBottom: 0 }}>
+                        Resumen financiero y rendimiento de tu negocio
+                    </p>
+                </div>
+
+                <div style={{
+                    width: isNarrow ? '100%' : 'auto',
+                    display: 'flex',
+                    justifyContent: isNarrow ? 'center' : 'flex-end',
                 }}>
-                    {[
-                        { id: 'dia', label: 'Hoy' },
-                        { id: 'semana', label: 'Semana' },
-                        { id: 'mes', label: 'Mes' },
-                        { id: 'anio', label: 'Año' }
-                    ].map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => setPeriod(item.id)}
-                            style={{
-                                padding: '0.5rem 1.25rem',
-                                borderRadius: '0.5rem',
-                                border: 'none',
-                                fontSize: '0.8125rem',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                backgroundColor: period === item.id ? '#2563eb' : 'transparent',
-                                color: period === item.id ? 'white' : '#64748b'
-                            }}
-                        >
-                            {item.label}
-                        </button>
-                    ))}
+                    <div style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        backgroundColor: 'white',
+                        padding: '0.25rem',
+                        borderRadius: '0.75rem',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                        maxWidth: '100%'
+                    }}>
+                        {[
+                            { id: 'dia', label: 'Hoy' },
+                            { id: 'semana', label: 'Semana' },
+                            { id: 'mes', label: 'Mes' },
+                            { id: 'anio', label: 'Año' }
+                        ].map((item) => (
+                            <button
+                                key={item.id}
+                                onClick={() => setPeriod(item.id)}
+                                style={{
+                                    padding: isNarrow ? '0.5rem 1rem' : '0.5rem 1.25rem',
+                                    borderRadius: '0.5rem',
+                                    border: 'none',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    whiteSpace: 'nowrap',
+                                    backgroundColor: period === item.id ? '#2563eb' : 'transparent',
+                                    color: period === item.id ? 'white' : '#64748b'
+                                }}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -221,7 +234,8 @@ const Reports = () => {
                     padding: '1.5rem', 
                     boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                     display: 'flex',
-                    flexDirection: 'column'
+                    flexDirection: 'column',
+                    minWidth: 0
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>
@@ -306,7 +320,8 @@ const Reports = () => {
                     padding: '1.5rem', 
                     boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                     display: 'flex',
-                    flexDirection: 'column'
+                    flexDirection: 'column',
+                    minWidth: 0
                 }}>
                     <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b', marginBottom: '1rem' }}>
                         Métodos de Pago
@@ -382,7 +397,9 @@ const Reports = () => {
                 backgroundColor: 'white', 
                 borderRadius: '1rem', 
                 padding: '1.5rem', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.08)' 
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                minWidth: 0,
+                maxWidth: '100%'
             }}>
                 <div style={{ 
                     display: 'flex', 
