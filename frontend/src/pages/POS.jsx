@@ -53,9 +53,13 @@ const POS = () => {
         // Focus en la búsqueda solo en pantallas grandes (no abrir teclado automático en móvil)
         if (window.innerWidth >= 768 && searchRef.current) searchRef.current.focus();
 
-        // Si vuelve el internet mientras el POS está abierto, reintentar sincronizar tasa
+        // Si vuelve el internet o se actualiza la tasa desde otro módulo, refrescar estado
         window.addEventListener('online', fetchRate);
-        return () => window.removeEventListener('online', fetchRate);
+        window.addEventListener('vectra:rate-updated', fetchRate);
+        return () => {
+            window.removeEventListener('online', fetchRate);
+            window.removeEventListener('vectra:rate-updated', fetchRate);
+        };
     }, []);
 
     const fetchRate = async () => {

@@ -227,6 +227,9 @@ export const currencyRepository = {
                     fuente,
                 };
                 await db.settings.put({ clave: SYNC_STATUS_KEY, valor: status, updated_at: now });
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('vectra:rate-updated', { detail: saved }));
+                }
                 return { synced: true, rate: saved, status };
             } catch {
                 // Intentar siguiente fuente
@@ -258,8 +261,9 @@ export const currencyRepository = {
             ? new Date(latest.sync.lastSuccess).getTime()
             : 0;
         const isStale = !lastSuccessMs || (Date.now() - lastSuccessMs) > FOUR_HOURS_MS;
+        const hadPendingFailure = latest?.sync?.lastStatus === 'offline' || latest?.sync?.lastStatus === 'error';
 
-        const needsSync = !hasRate || latest?.fecha !== today || (!isManualToday && isStale);
+        const needsSync = !hasRate || latest?.fecha !== today || (!isManualToday && (isStale || hadPendingFailure));
 
         let syncFailed = false;
         if (needsSync) {

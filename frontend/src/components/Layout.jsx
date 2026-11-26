@@ -5,6 +5,7 @@ import {
     TrendingUp, Settings, Store, Palette, BarChart3, Menu, X
 } from 'lucide-react';
 import { settingsRepository } from '../services/settingsRepository';
+import { currencyRepository } from '../services/currencyRepository';
 
 /** Detecta si la pantalla es móvil (< 768px) */
 function useIsMobile() {
@@ -53,7 +54,23 @@ const Layout = () => {
         };
         loadBusiness();
         window.addEventListener('vectra:config-updated', loadBusiness);
-        return () => window.removeEventListener('vectra:config-updated', loadBusiness);
+
+        // Auto-sincronizar tasa BCV al iniciar y cuando vuelva el internet
+        let reconnectTimer = null;
+        const syncRateOnReconnect = () => {
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(() => {
+                currencyRepository.ensureUpToDateRate().catch(() => {});
+            }, 1500);
+        };
+        currencyRepository.ensureUpToDateRate().catch(() => {});
+        window.addEventListener('online', syncRateOnReconnect);
+
+        return () => {
+            window.removeEventListener('vectra:config-updated', loadBusiness);
+            window.removeEventListener('online', syncRateOnReconnect);
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+        };
     }, []);
 
     // Cierra sidebar al navegar en móvil

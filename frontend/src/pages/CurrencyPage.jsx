@@ -42,7 +42,19 @@ const CurrencyPage = () => {
     };
 
     useEffect(() => {
-        fetchRateData();
+        const init = async () => {
+            await fetchRateData();
+            if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
+                const res = await currencyRepository.ensureUpToDateRate().catch(() => null);
+                if (res && !res.syncFailed) {
+                    await fetchRateData();
+                }
+            }
+        };
+        init();
+
+        window.addEventListener('vectra:rate-updated', fetchRateData);
+        return () => window.removeEventListener('vectra:rate-updated', fetchRateData);
     }, []);
 
     const handleSyncNow = async () => {
