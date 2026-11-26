@@ -241,6 +241,39 @@ export const currencyRepository = {
         await db.settings.put({ clave: SYNC_STATUS_KEY, valor: status, updated_at: now });
         return { synced: false, offline: status.lastStatus === 'offline', status };
     },
+
+    /**
+     * Garantiza que la tasa esté actualizada al día de hoy (o cada 4h si es automática).
+     * Respeta tasas ingresadas manualmente hoy para no sobreescribirlas.
+     * Devuelve el estado actual junto con `isFromToday` y `syncFailed`.
+     */
+    async ensureUpToDateRate() {
+        const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+        const today = getTodayDateString();
+        let latest = await this.getLatestRate();
+
+        const hasRate = latest?.tasa > 0;
+        const isManualToday = latest?.fecha === today && latest?.fuente === 'Manual';
+        const lastSuccessMs = latest?.sync?.lastSuccess
+            ? new Date(latest.sync.lastSuccess).getTime()
+            : 0;
+        const isStale = !lastSuccessMs || (Date.now() - lastSuccessMs) > FOUR_HOURS_MS;
+
+        const needsSync = !hasRate || latest?.fecha !== today || (!isManualToday && isStale);
+
+        let syncFailed = false;
+        if (needsSync) {
+            const syncRes = await this.syncFromOnline();
+            latest = await this.getLatestRate();
+            syncFailed = !syncRes.synced;
+        }
+
+        return {
+            ...latest,
+            isFromToday: latest?.fecha === today,
+            syncFailed,
+        };
+    },
 };
 
 export default currencyRepository;

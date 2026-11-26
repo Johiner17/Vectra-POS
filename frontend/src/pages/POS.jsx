@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Minus, Trash2, ShoppingCart, X, Package, Tag, Coffee, Box, Star } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, Plus, Minus, Trash2, ShoppingCart, X, Package, Tag, Coffee, Box, Star, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CheckoutModal from '../components/CheckoutModal';
 import { productRepository } from '../services/productRepository';
@@ -21,6 +22,7 @@ const POS = () => {
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
     const [tasaBcv, setTasaBcv] = useState(0);
+    const [rateInfo, setRateInfo] = useState(null);
     const [posConfig, setPosConfig] = useState({ 
         icon: 'ShoppingCart', 
         bg: '#eff6ff', 
@@ -49,18 +51,17 @@ const POS = () => {
         
         // Focus en la búsqueda solo en pantallas grandes (no abrir teclado automático en móvil)
         if (window.innerWidth >= 768 && searchRef.current) searchRef.current.focus();
+
+        // Si vuelve el internet mientras el POS está abierto, reintentar sincronizar tasa
+        window.addEventListener('online', fetchRate);
+        return () => window.removeEventListener('online', fetchRate);
     }, []);
 
     const fetchRate = async () => {
         try {
-            let latest = await currencyRepository.getLatestRate();
-            if ((!latest?.tasa || latest.tasa <= 0) && navigator.onLine) {
-                const syncResult = await currencyRepository.syncFromOnline();
-                if (syncResult.synced && syncResult.rate) {
-                    latest = syncResult.rate;
-                }
-            }
-            setTasaBcv(latest?.tasa || 0);
+            const result = await currencyRepository.ensureUpToDateRate();
+            setTasaBcv(result?.tasa || 0);
+            setRateInfo(result);
         } catch {
             console.error('No se pudo obtener la tasa BCV local');
         }
@@ -377,6 +378,37 @@ const POS = () => {
 
             {/* ─────────── PANEL IZQUIERDO: Productos ─────────── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflow: isMobile ? 'visible' : 'hidden' }}>
+                {/* Alerta de tasa BCV desactualizada o sin conexión */}
+                {rateInfo && (rateInfo.tasa <= 0 || !rateInfo.isFromToday || rateInfo.syncFailed) && (
+                    <Link
+                        to="/currency"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.625rem',
+                            padding: '0.625rem 0.875rem',
+                            borderRadius: '0.625rem',
+                            backgroundColor: rateInfo.tasa <= 0 ? '#fef2f2' : '#fffbeb',
+                            border: `1px solid ${rateInfo.tasa <= 0 ? '#fecaca' : '#fde68a'}`,
+                            color: rateInfo.tasa <= 0 ? '#b91c1c' : '#92400e',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            textDecoration: 'none',
+                            lineHeight: 1.35,
+                        }}
+                    >
+                        <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+                        <span>
+                            {rateInfo.tasa <= 0
+                                ? 'No hay tasa BCV guardada. Toca aquí para ingresarla manualmente.'
+                                : !rateInfo.isFromToday
+                                    ? `Tasa BCV desactualizada (usando Bs. ${formatBs(rateInfo.tasa)} del ${rateInfo.fecha ? new Date(rateInfo.fecha + 'T12:00:00').toLocaleDateString('es-VE') : 'fecha anterior'}). Toca aquí para actualizarla manualmente.`
+                                    : `No se pudo verificar la tasa BCV online (usando Bs. ${formatBs(rateInfo.tasa)}). Toca aquí si deseas ajustarla manualmente.`
+                            }
+                        </span>
+                    </Link>
+                )}
+
                 {/* Barra de búsqueda */}
                 <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem' }}>
                     <div style={{ position: 'relative', flex: 1 }}>
