@@ -116,7 +116,7 @@ const Customization = () => {
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
                 <Palette size={28} color="#2563eb" />
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0, color: '#1e293b' }}>
+                <h1 className="page-title" style={{ fontSize: '1.5rem', margin: 0 }}>
                     Personalización POS
                 </h1>
             </div>

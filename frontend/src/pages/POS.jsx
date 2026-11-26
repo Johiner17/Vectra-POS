@@ -409,7 +409,7 @@ const POS = () => {
                             />
                         </div>
                         <div style={{ minWidth: 0 }}>
-                            <h1 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
+                            <h1 className="page-title" style={{ margin: 0, fontSize: '1.15rem', lineHeight: 1.2 }}>
                                 Punto de Venta
                             </h1>
                             <Link

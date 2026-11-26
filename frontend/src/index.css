@@ -42,6 +42,14 @@ button {
   border: none;
 }
 
+/* ─── Tipografía de encabezados de pantalla ─── */
+.page-title {
+  font-family: 'Plus Jakarta Sans', var(--font-family);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #0f172a;
+}
+
 /* ─── Utilidades ─── */
 .container {
   max-width: 1200px;

@@ -139,7 +139,7 @@ const Reports = () => {
                 gap: '1rem'
             }}>
                 <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>Reportería</h1>
+                    <h1 className="page-title" style={{ fontSize: '1.5rem', margin: 0 }}>Reportería</h1>
                     <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '0.25rem', marginBottom: 0 }}>
                         Resumen financiero y rendimiento de tu negocio
                     </p>

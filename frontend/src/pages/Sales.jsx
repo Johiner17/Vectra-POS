@@ -187,7 +187,7 @@ const Sales = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
             {/* Header */}
             <div>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>Historial de Ventas</h1>
+                <h1 className="page-title" style={{ fontSize: '1.5rem', margin: 0 }}>Historial de Ventas</h1>
                 <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '0.25rem', marginBottom: 0 }}>
                     Consulta y gestiona todas las transacciones
                 </p>

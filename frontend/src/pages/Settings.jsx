@@ -257,7 +257,7 @@ const Settings = () => {
                 }}
             >
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#1e293b' }}>
+                    <h1 className="page-title" style={{ margin: 0, fontSize: '1.5rem' }}>
                         Configuración y Respaldos
                     </h1>
                     <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: '#64748b' }}>

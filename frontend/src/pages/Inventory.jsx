@@ -116,7 +116,7 @@ const Inventory = () => {
     return (
         <div style={{ paddingBottom: isMobile ? '5.25rem' : 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>Gestión de Inventario</h2>
+                <h1 className="page-title" style={{ margin: 0, fontSize: '1.5rem' }}>Gestión de Inventario</h1>
                 {!isMobile && (
                     <button onClick={openNew} className="btn btn-primary" style={{ borderRadius: '0.75rem', padding: '0.625rem 1.125rem', fontWeight: 600 }}>
                         <Plus size={18} style={{ marginRight: '0.4rem' }} /> Nuevo Producto

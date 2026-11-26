@@ -62,7 +62,7 @@ const Dashboard = () => {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b' }}>Dashboard</h1>
+                    <h1 className="page-title" style={{ fontSize: '1.5rem', margin: 0 }}>Dashboard</h1>
                     <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
                         {new Date().toLocaleDateString('es-VE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>

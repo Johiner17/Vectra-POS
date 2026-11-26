@@ -115,7 +115,7 @@ const CurrencyPage = () => {
 
             {/* Header */}
             <div>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b' }}>Tasa de Cambio BCV</h1>
+                <h1 className="page-title" style={{ fontSize: '1.5rem', margin: 0 }}>Tasa de Cambio BCV</h1>
                 <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
                     Gestión de la tasa del Banco Central de Venezuela. El sistema funciona offline con la última tasa guardada.
                 </p>
