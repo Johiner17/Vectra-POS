@@ -399,10 +399,14 @@ const POS = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', minWidth: 0 }}>
                         <div style={{
                             width: '38px', height: '38px', borderRadius: '0.75rem',
-                            backgroundColor: '#eff6ff', border: '1px solid #dbeafe',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                            overflow: 'hidden', flexShrink: 0,
+                            boxShadow: '0 2px 6px rgba(15, 23, 42, 0.12)',
                         }}>
-                            <ShoppingCart size={19} color="#2563eb" />
+                            <img
+                                src="/icons/icon-192.png"
+                                alt="Vectra POS"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                            />
                         </div>
                         <div style={{ minWidth: 0 }}>
                             <h1 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
