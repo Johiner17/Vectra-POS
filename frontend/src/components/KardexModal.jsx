@@ -28,26 +28,52 @@ const KardexModal = ({ isOpen, onClose, product }) => {
     if (!isOpen || !product) return null;
 
     return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-        }}>
-            <div className="card" style={{ width: '700px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>
-                    <h3>Kardex: {product.nombre}</h3>
-                    <button onClick={onClose}><X size={20} /></button>
+        <div
+            onClick={onClose}
+            style={{
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: 'rgba(15, 23, 42, 0.55)',
+                backdropFilter: 'blur(4px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 1200,
+                padding: '0.75rem'
+            }}
+        >
+            <div
+                className="card"
+                onClick={e => e.stopPropagation()}
+                style={{
+                    width: 'min(700px, calc(100vw - 1.5rem))',
+                    maxHeight: '88dvh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: '1rem',
+                    padding: 'clamp(1rem, 3vw, 1.5rem)'
+                }}
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '0.75rem' }}>
+                    <h3 style={{ margin: 0, fontSize: 'clamp(1rem, 3vw, 1.15rem)', fontWeight: 700, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        Kardex: {product.nombre}
+                    </h3>
+                    <button
+                        onClick={onClose}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', padding: '0.25rem', flexShrink: 0 }}
+                        aria-label="Cerrar"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
-                <div style={{ flex: 1, overflowY: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                    <table style={{ width: '100%', minWidth: '480px', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                         <thead style={{ backgroundColor: '#f8fafc', position: 'sticky', top: 0 }}>
                             <tr>
-                                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Fecha</th>
-                                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Tipo</th>
-                                <th style={{ padding: '0.5rem', textAlign: 'right' }}>Cant</th>
-                                <th style={{ padding: '0.5rem', textAlign: 'right' }}>Stock Pre</th>
-                                <th style={{ padding: '0.5rem', textAlign: 'right' }}>Stock Post</th>
-                                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Obs</th>
+                                <th style={{ padding: '0.5rem', textAlign: 'left', whiteSpace: 'nowrap' }}>Fecha</th>
+                                <th style={{ padding: '0.5rem', textAlign: 'left', whiteSpace: 'nowrap' }}>Tipo</th>
+                                <th style={{ padding: '0.5rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Cant</th>
+                                <th style={{ padding: '0.5rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Stock Pre</th>
+                                <th style={{ padding: '0.5rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Stock Post</th>
+                                <th style={{ padding: '0.5rem', textAlign: 'left', whiteSpace: 'nowrap' }}>Obs</th>
                             </tr>
                         </thead>
                         <tbody>
