@@ -45,7 +45,7 @@ const PAYMENT_LABELS = {
     efectivo_usd: 'Efectivo USD',
     efectivo_bs: 'Efectivo Bs.',
     transferencia_usd: 'Binance USDT',
-    transferencia_bs: 'Pago Móvil / Transf. Bs.',
+    transferencia_bs: 'Pago Móvil',
     punto_venta: 'Punto de Venta',
     credito: 'Crédito'
 };

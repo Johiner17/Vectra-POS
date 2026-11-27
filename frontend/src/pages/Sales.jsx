@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Eye, X, ChevronLeft, ChevronRight, DollarSign, ShoppingBag, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { saleRepository } from '../services/saleRepository';
-import { formatBs } from '../utils/formatters';
+import { formatBs, formatPaymentLabel } from '../utils/formatters';
 import { useIsMobile } from '../hooks/useIsMobile';
 import StatCard from '../components/StatCard';
 
@@ -70,8 +70,8 @@ const SaleDetailModal = ({ sale, onClose }) => {
                                 {sale.payments.map((p, i) => (
                                     <div key={i} style={{ padding: '0.5rem 0', borderBottom: '1px solid #f8fafc' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ fontSize: '0.875rem', color: '#374151', textTransform: 'capitalize' }}>
-                                                {p.tipo_pago?.replace(/_/g, ' ')}
+                                            <span style={{ fontSize: '0.875rem', color: '#374151', fontWeight: 500 }}>
+                                                {formatPaymentLabel(p.tipo_pago)}
                                             </span>
                                             <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>
                                                 {p.moneda === 'BS' ? `Bs. ${formatBs(p.monto_centavos / 100)}` : `$ ${(p.monto_centavos / 100).toFixed(2)}`}
