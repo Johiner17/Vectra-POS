@@ -1,51 +1,62 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Package, Tag, Coffee, Box, Star, Save, Palette, Upload, Image, X, Check, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+    ShoppingCart, Package, Tag, Coffee, Box, Star,
+    Save, Palette, Upload, Image as ImageIcon, X, Check, Trash2,
+    ChevronLeft, Eye, Plus
+} from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const icons = [
-    { name: 'ShoppingCart', component: ShoppingCart },
-    { name: 'Package', component: Package },
-    { name: 'Tag', component: Tag },
-    { name: 'Coffee', component: Coffee },
-    { name: 'Box', component: Box },
-    { name: 'Star', component: Star },
+    { name: 'ShoppingCart', label: 'Carrito', component: ShoppingCart },
+    { name: 'Package', label: 'Paquete', component: Package },
+    { name: 'Tag', label: 'Etiqueta', component: Tag },
+    { name: 'Coffee', label: 'Bebida', component: Coffee },
+    { name: 'Box', label: 'Caja', component: Box },
+    { name: 'Star', label: 'Destacado', component: Star },
 ];
 
 const colors = [
-    { bg: '#eff6ff', icon: '#3b82f6', name: 'Azul (Por defecto)' },
+    { bg: '#eff6ff', icon: '#3b82f6', name: 'Azul' },
     { bg: '#f0fdf4', icon: '#22c55e', name: 'Verde' },
     { bg: '#fef2f2', icon: '#ef4444', name: 'Rojo' },
     { bg: '#fdf4ff', icon: '#d946ef', name: 'Fucsia' },
     { bg: '#fff7ed', icon: '#f97316', name: 'Naranja' },
     { bg: '#f3f4f6', icon: '#4b5563', name: 'Gris' },
-    { bg: '#1e293b', icon: '#38bdf8', name: 'Oscuro/Neón' }
+    { bg: '#1e293b', icon: '#38bdf8', name: 'Oscuro' }
 ];
 
 const Customization = () => {
+    const isMobile = useIsMobile();
+    const navigate = useNavigate();
+
     const [selectedIcon, setSelectedIcon] = useState('ShoppingCart');
     const [selectedColor, setSelectedColor] = useState(colors[0]);
     const [useImage, setUseImage] = useState(false);
     const [productImage, setProductImage] = useState('');
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-    
-    // Modal states
+
     const fileInputRef = useRef(null);
     const [dragOver, setDragOver] = useState(false);
     const [tempImage, setTempImage] = useState('');
 
-    useEffect(() => {
+    const loadSavedSettings = () => {
         const savedIcon = localStorage.getItem('pos_product_icon') || 'ShoppingCart';
         const savedBgColor = localStorage.getItem('pos_product_bg') || '#eff6ff';
-        const savedIconColor = localStorage.getItem('pos_product_icon_color') || '#3b82f6';
         const savedUseImage = localStorage.getItem('pos_product_use_image') === 'true';
         const savedImage = localStorage.getItem('pos_product_image') || '';
-        
+
         setSelectedIcon(savedIcon);
         setUseImage(savedUseImage);
         setProductImage(savedImage);
-        
+
         const matchedColor = colors.find(c => c.bg === savedBgColor) || colors[0];
         setSelectedColor(matchedColor);
+    };
+
+    useEffect(() => {
+        loadSavedSettings();
     }, []);
 
     const handleSave = () => {
@@ -55,6 +66,11 @@ const Customization = () => {
         localStorage.setItem('pos_product_use_image', useImage ? 'true' : 'false');
         localStorage.setItem('pos_product_image', productImage);
         toast.success('Personalización guardada con éxito');
+    };
+
+    const handleCancel = () => {
+        loadSavedSettings();
+        toast('Cambios descartados');
     };
 
     const handleFile = (file) => {
@@ -110,317 +126,614 @@ const Customization = () => {
     };
 
     const SelectedIconComponent = icons.find(i => i.name === selectedIcon)?.component || ShoppingCart;
+    const showingCustomImage = useImage && Boolean(productImage);
 
     return (
-        <div style={{ maxWidth: '800px', margin: '0 auto', backgroundColor: 'white', padding: '2rem', borderRadius: '1rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+        <div style={{
+            maxWidth: '680px',
+            margin: '0 auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+            paddingBottom: isMobile ? '1rem' : '2rem'
+        }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-                <Palette size={28} color="#2563eb" />
-                <h1 className="page-title" style={{ fontSize: '1.5rem', margin: 0 }}>
-                    Personalización POS
-                </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                <button
+                    type="button"
+                    onClick={() => navigate(-1)}
+                    aria-label="Volver"
+                    style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        backgroundColor: 'white',
+                        border: '1px solid #e2e8f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: '#334155',
+                        flexShrink: 0,
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                    }}
+                >
+                    <ChevronLeft size={20} />
+                </button>
+                <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                        <Palette size={20} color="#2563eb" />
+                        <h1 className="page-title" style={{ fontSize: isMobile ? '1.3rem' : '1.5rem', margin: 0 }}>
+                            Personalización POS
+                        </h1>
+                    </div>
+                    <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0.15rem 0 0' }}>
+                        Estilo visual por defecto para productos sin foto propia
+                    </p>
+                </div>
             </div>
 
-            {/* Segmented Control Selector */}
-            <div style={{ marginBottom: '2.5rem' }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#334155', marginBottom: '0.75rem' }}>
-                    Estilo Visual de los Productos
-                </h3>
-                <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1rem', marginTop: 0 }}>
-                    Elige cómo deseas que se muestren los productos en la interfaz principal del POS.
-                </p>
-                <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#f1f5f9', padding: '0.375rem', borderRadius: '0.75rem', width: 'fit-content' }}>
+            {/* Modo de visualización */}
+            <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.55rem' }}>
+                    <span style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        letterSpacing: '0.06em',
+                        color: '#94a3b8',
+                        textTransform: 'uppercase'
+                    }}>
+                        Modo de Visualización
+                    </span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2563eb' }}>
+                        Configuración global
+                    </span>
+                </div>
+
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '0.35rem',
+                    backgroundColor: '#f1f5f9',
+                    padding: '0.35rem',
+                    borderRadius: '0.9rem',
+                    border: '1px solid #e2e8f0'
+                }}>
                     <button
+                        type="button"
                         onClick={() => setUseImage(false)}
                         style={{
-                            padding: '0.625rem 1.5rem',
-                            borderRadius: '0.5rem',
+                            padding: '0.65rem 0.75rem',
+                            borderRadius: '0.65rem',
                             border: 'none',
                             backgroundColor: !useImage ? 'white' : 'transparent',
-                            color: !useImage ? '#2563eb' : '#475569',
-                            fontWeight: 600,
+                            color: !useImage ? '#2563eb' : '#64748b',
+                            fontWeight: 700,
+                            fontSize: '0.84rem',
                             cursor: 'pointer',
-                            boxShadow: !useImage ? '0 4px 6px -1px rgba(0,0,0,0.1)' : 'none',
+                            boxShadow: !useImage ? '0 2px 8px rgba(15, 23, 42, 0.08)' : 'none',
                             transition: 'all 0.2s',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.5rem'
+                            justifyContent: 'center',
+                            gap: '0.45rem',
+                            whiteSpace: 'nowrap'
                         }}
                     >
                         <ShoppingCart size={16} />
-                        Icono y Color Dinámico
+                        Icono y Color
                     </button>
                     <button
+                        type="button"
                         onClick={() => setUseImage(true)}
                         style={{
-                            padding: '0.625rem 1.5rem',
-                            borderRadius: '0.5rem',
+                            padding: '0.65rem 0.75rem',
+                            borderRadius: '0.65rem',
                             border: 'none',
                             backgroundColor: useImage ? 'white' : 'transparent',
-                            color: useImage ? '#2563eb' : '#475569',
-                            fontWeight: 600,
+                            color: useImage ? '#2563eb' : '#64748b',
+                            fontWeight: 700,
+                            fontSize: '0.84rem',
                             cursor: 'pointer',
-                            boxShadow: useImage ? '0 4px 6px -1px rgba(0,0,0,0.1)' : 'none',
+                            boxShadow: useImage ? '0 2px 8px rgba(15, 23, 42, 0.08)' : 'none',
                             transition: 'all 0.2s',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.5rem'
+                            justifyContent: 'center',
+                            gap: '0.45rem',
+                            whiteSpace: 'nowrap'
                         }}
                     >
-                        <Image size={16} />
-                        Imagen Personalizada
+                        <ImageIcon size={16} />
+                        Imagen Propia
                     </button>
                 </div>
             </div>
 
-            {/* Render conditional sections */}
+            {/* Contenido condicional: Icono y Color O Imagen Personalizada */}
             {!useImage ? (
-                <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
-                    {/* Section 1: Icon Selection */}
-                    <div style={{ marginBottom: '2rem' }}>
-                        <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#334155', marginBottom: '1rem' }}>
-                            1. Elige un Icono para los Productos
-                        </h3>
-                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '1.25rem',
+                    padding: isMobile ? '1.15rem' : '1.4rem',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1.35rem',
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    {/* 1. Selección de Icono */}
+                    <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                                1. Elige un Icono
+                            </h3>
+                            <span style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                color: '#2563eb',
+                                backgroundColor: '#eff6ff',
+                                padding: '0.2rem 0.6rem',
+                                borderRadius: '999px'
+                            }}>
+                                6 opciones
+                            </span>
+                        </div>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)',
+                            gap: '0.65rem'
+                        }}>
                             {icons.map((iconData) => {
                                 const IconComp = iconData.component;
                                 const isSelected = selectedIcon === iconData.name;
                                 return (
-                                    <div 
+                                    <button
                                         key={iconData.name}
+                                        type="button"
                                         onClick={() => setSelectedIcon(iconData.name)}
-                                        style={{ 
-                                            padding: '1rem', borderRadius: '0.5rem', cursor: 'pointer',
-                                            border: `2px solid ${isSelected ? '#2563eb' : '#e2e8f0'}`,
-                                            backgroundColor: isSelected ? '#eff6ff' : 'white',
-                                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
-                                            transition: 'all 0.2s'
+                                        style={{
+                                            padding: '0.85rem 0.5rem',
+                                            borderRadius: '0.9rem',
+                                            cursor: 'pointer',
+                                            border: `1.5px solid ${isSelected ? '#2563eb' : '#e2e8f0'}`,
+                                            backgroundColor: isSelected ? '#eff6ff' : '#f8fafc',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '0.4rem',
+                                            transition: 'all 0.15s'
                                         }}
-                                        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = '#cbd5e1'; }}
-                                        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = '#e2e8f0'; }}
                                     >
-                                        <IconComp size={32} color={isSelected ? '#2563eb' : '#64748b'} />
-                                    </div>
+                                        <IconComp size={24} color={isSelected ? '#2563eb' : '#64748b'} />
+                                        <span style={{
+                                            fontSize: '0.72rem',
+                                            fontWeight: isSelected ? 700 : 600,
+                                            color: isSelected ? '#1d4ed8' : '#64748b'
+                                        }}>
+                                            {iconData.label}
+                                        </span>
+                                    </button>
                                 );
                             })}
                         </div>
                     </div>
 
-                    {/* Section 2: Color selection */}
-                    <div style={{ marginBottom: '2rem' }}>
-                        <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#334155', marginBottom: '1rem' }}>
-                            2. Elige un Estilo de Color
+                    <div style={{ height: '1px', backgroundColor: '#f1f5f9' }} />
+
+                    {/* 2. Selección de Color */}
+                    <div>
+                        <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.75rem' }}>
+                            2. Elige un Color
                         </h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)',
+                            gap: '0.65rem'
+                        }}>
                             {colors.map((colorSet, idx) => {
                                 const isSelected = selectedColor.bg === colorSet.bg;
                                 return (
-                                    <div 
+                                    <button
                                         key={idx}
+                                        type="button"
                                         onClick={() => setSelectedColor(colorSet)}
-                                        style={{ 
-                                            padding: '1rem', borderRadius: '0.5rem', cursor: 'pointer',
-                                            border: `2px solid ${isSelected ? '#2563eb' : '#e2e8f0'}`,
-                                            backgroundColor: 'white',
-                                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
-                                            transition: 'all 0.2s'
+                                        style={{
+                                            padding: '0.75rem 0.5rem',
+                                            borderRadius: '0.9rem',
+                                            cursor: 'pointer',
+                                            border: `1.5px solid ${isSelected ? '#2563eb' : '#e2e8f0'}`,
+                                            backgroundColor: isSelected ? '#eff6ff' : 'white',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '0.45rem',
+                                            transition: 'all 0.15s'
                                         }}
-                                        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.borderColor = '#cbd5e1'; }}
-                                        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.borderColor = '#e2e8f0'; }}
                                     >
-                                        <div style={{ 
-                                            width: '48px', height: '48px', borderRadius: '0.5rem',
+                                        <div style={{
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '0.65rem',
                                             backgroundColor: colorSet.bg,
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            border: '1px solid rgba(15,23,42,0.06)'
                                         }}>
-                                            <SelectedIconComponent size={24} color={colorSet.icon} />
+                                            <SelectedIconComponent size={20} color={colorSet.icon} />
                                         </div>
-                                        <span style={{ fontSize: '0.875rem', color: '#475569', fontWeight: 500 }}>
+                                        <span style={{
+                                            fontSize: '0.75rem',
+                                            fontWeight: isSelected ? 700 : 600,
+                                            color: isSelected ? '#1d4ed8' : '#475569'
+                                        }}>
                                             {colorSet.name}
                                         </span>
-                                    </div>
+                                    </button>
                                 );
                             })}
                         </div>
                     </div>
                 </div>
             ) : (
-                <div style={{ marginBottom: '2rem', animation: 'fadeIn 0.25s ease-out' }}>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#334155', marginBottom: '1rem' }}>
-                        Imagen de Producto Personalizada
-                    </h3>
-                    <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '1.5rem', 
-                        padding: '1.5rem', 
-                        border: '2px dashed #cbd5e1', 
-                        borderRadius: '0.75rem', 
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '1.25rem',
+                    padding: isMobile ? '1.15rem' : '1.4rem',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    {/* Header de tarjeta */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: '0.75rem',
+                        paddingBottom: '0.9rem',
+                        borderBottom: '1px solid #f1f5f9',
+                        marginBottom: '1rem'
+                    }}>
+                        <div>
+                            <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                                Imagen de Producto Principal
+                            </h3>
+                            <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0.2rem 0 0' }}>
+                                Se asignará a productos sin foto específica
+                            </p>
+                        </div>
+                        <span style={{
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            padding: '0.25rem 0.65rem',
+                            borderRadius: '999px',
+                            whiteSpace: 'nowrap',
+                            backgroundColor: productImage ? '#ecfdf5' : '#f1f5f9',
+                            color: productImage ? '#059669' : '#64748b',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem'
+                        }}>
+                            <span style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                backgroundColor: productImage ? '#10b981' : '#94a3b8'
+                            }} />
+                            {productImage ? 'Activa' : 'Sin imagen'}
+                        </span>
+                    </div>
+
+                    {/* Dropzone / Preview */}
+                    <div style={{
+                        border: '1.5px dashed #bfdbfe',
+                        borderRadius: '1rem',
                         backgroundColor: '#f8fafc',
-                        transition: 'all 0.2s'
+                        padding: '1.5rem 1rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center',
+                        gap: '0.85rem'
                     }}>
                         <div style={{
-                            width: '100px',
-                            height: '100px',
-                            borderRadius: '0.75rem',
-                            backgroundColor: '#f1f5f9',
+                            width: '112px',
+                            height: '112px',
+                            borderRadius: '1rem',
+                            backgroundColor: productImage ? 'white' : '#eff6ff',
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 8px 20px -6px rgba(15, 23, 42, 0.14)',
+                            overflow: 'hidden',
+                            position: 'relative',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            overflow: 'hidden',
-                            border: '1px solid #cbd5e1',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                            justifyContent: 'center'
                         }}>
                             {productImage ? (
-                                <img src={productImage} alt="Uploaded product placeholder" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : (
-                                <Image size={40} color="#94a3b8" />
-                            )}
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-                            <p style={{ margin: 0, fontSize: '0.95rem', color: '#334155', fontWeight: 600 }}>
-                                {productImage ? '¡Imagen cargada correctamente!' : 'No se ha seleccionado ninguna imagen'}
-                            </p>
-                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', lineHeight: 1.4 }}>
-                                Se utilizará esta imagen para representar visualmente todos los productos sin una imagen específica configurada.
-                            </p>
-                            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
-                                <button
-                                    onClick={() => {
-                                        setTempImage('');
-                                        setIsUploadModalOpen(true);
-                                    }}
-                                    style={{
-                                        padding: '0.5rem 1rem',
+                                <>
+                                    <img
+                                        src={productImage}
+                                        alt="Imagen por defecto"
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
+                                    <span style={{
+                                        position: 'absolute',
+                                        top: '0.4rem',
+                                        right: '0.4rem',
                                         backgroundColor: '#2563eb',
                                         color: 'white',
+                                        fontSize: '0.62rem',
+                                        fontWeight: 800,
+                                        padding: '0.12rem 0.38rem',
+                                        borderRadius: '0.35rem'
+                                    }}>
+                                        1:1
+                                    </span>
+                                </>
+                            ) : (
+                                <ImageIcon size={36} color="#94a3b8" />
+                            )}
+                        </div>
+
+                        <div>
+                            <p style={{ margin: 0, fontSize: '0.92rem', fontWeight: 700, color: '#0f172a' }}>
+                                {productImage ? '¡Imagen cargada correctamente!' : 'No se ha seleccionado ninguna imagen'}
+                            </p>
+                            <p style={{ margin: '0.3rem 0 0', fontSize: '0.75rem', color: '#64748b', lineHeight: 1.4 }}>
+                                Formatos válidos: <strong>PNG, JPG, WebP</strong> (máx. 2MB).<br />
+                                Relación cuadrada 1:1 recomendada.
+                            </p>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.65rem', width: '100%', maxWidth: '340px' }}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setTempImage('');
+                                    setIsUploadModalOpen(true);
+                                }}
+                                style={{
+                                    flex: 1,
+                                    padding: '0.7rem 1rem',
+                                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '0.75rem',
+                                    fontWeight: 700,
+                                    fontSize: '0.84rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.4rem',
+                                    whiteSpace: 'nowrap',
+                                    boxShadow: '0 4px 12px -2px rgba(37, 99, 235, 0.35)'
+                                }}
+                            >
+                                <Upload size={16} />
+                                {productImage ? 'Cambiar Imagen' : 'Subir Imagen'}
+                            </button>
+
+                            {productImage && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setProductImage('');
+                                        toast.success('Imagen eliminada de la vista previa. Recuerda guardar.');
+                                    }}
+                                    style={{
+                                        padding: '0.7rem 0.95rem',
+                                        backgroundColor: '#fee2e2',
+                                        color: '#dc2626',
                                         border: 'none',
-                                        borderRadius: '0.5rem',
-                                        fontWeight: 600,
+                                        borderRadius: '0.75rem',
+                                        fontWeight: 700,
+                                        fontSize: '0.84rem',
                                         cursor: 'pointer',
-                                        fontSize: '0.85rem',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '0.375rem',
-                                        transition: 'all 0.2s'
+                                        justifyContent: 'center',
+                                        gap: '0.35rem',
+                                        whiteSpace: 'nowrap'
                                     }}
-                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = '#2563eb'}
                                 >
-                                    <Upload size={16} />
-                                    {productImage ? 'Cambiar Imagen' : 'Subir Imagen'}
+                                    <Trash2 size={15} />
+                                    Eliminar
                                 </button>
-                                {productImage && (
-                                    <button
-                                        onClick={() => {
-                                            setProductImage('');
-                                            toast.success('Imagen eliminada de la vista previa. Recuerda guardar.');
-                                        }}
-                                        style={{
-                                            padding: '0.5rem 1rem',
-                                            backgroundColor: '#fee2e2',
-                                            color: '#ef4444',
-                                            border: 'none',
-                                            borderRadius: '0.5rem',
-                                            fontWeight: 600,
-                                            cursor: 'pointer',
-                                            fontSize: '0.85rem',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.375rem',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fecaca'}
-                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fee2e2'}
-                                    >
-                                        <Trash2 size={16} />
-                                        Eliminar
-                                    </button>
-                                )}
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Vista Previa Container */}
-            <div style={{ padding: '1.5rem', backgroundColor: '#f8fafc', borderRadius: '0.5rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1.5rem', border: '1px solid #f1f5f9' }}>
-                <div>
-                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', fontWeight: 700 }}>Vista Previa del Producto</h4>
-                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>Así se verán los productos en la interfaz de POS.</p>
+            {/* Vista Previa en Terminal POS */}
+            <div style={{
+                backgroundColor: 'white',
+                borderRadius: '1.25rem',
+                padding: isMobile ? '1.15rem' : '1.4rem',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                        <Eye size={17} color="#2563eb" />
+                        <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                            Vista Previa en Terminal POS
+                        </h3>
+                    </div>
+                    <span style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        color: '#64748b',
+                        backgroundColor: '#f1f5f9',
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '999px',
+                        whiteSpace: 'nowrap'
+                    }}>
+                        Tarjeta POS
+                    </span>
                 </div>
+
                 <div style={{
-                    backgroundColor: 'white', borderRadius: '0.75rem', padding: '0.875rem', 
-                    border: '2px solid #f1f5f9', width: '140px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
-                    transition: 'all 0.2s'
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '1rem',
+                    padding: '1rem',
+                    border: '1px solid #f1f5f9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.95rem'
                 }}>
                     <div style={{
-                        height: '64px', borderRadius: '0.5rem', marginBottom: '0.625rem',
-                        backgroundColor: useImage && productImage ? 'transparent' : selectedColor.bg,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        overflow: 'hidden'
+                        width: '68px',
+                        height: '68px',
+                        borderRadius: '0.85rem',
+                        backgroundColor: showingCustomImage ? 'white' : selectedColor.bg,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden',
+                        flexShrink: 0,
+                        border: '1px solid rgba(15,23,42,0.06)'
                     }}>
-                        {useImage && productImage ? (
-                            <img src={productImage} alt="Preview product placeholder" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {showingCustomImage ? (
+                            <img src={productImage} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                            <SelectedIconComponent size={24} color={selectedColor.icon} />
+                            <SelectedIconComponent size={28} color={selectedColor.icon} />
                         )}
                     </div>
-                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1e293b', marginBottom: '0.25rem' }}>Producto Prueba</p>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2563eb', marginBottom: '0.125rem' }}>$10.00</p>
-                    <p style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Stock: 50</p>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{
+                            display: 'inline-block',
+                            fontSize: '0.65rem',
+                            fontWeight: 700,
+                            color: '#2563eb',
+                            backgroundColor: '#eff6ff',
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: '0.35rem',
+                            marginBottom: '0.25rem'
+                        }}>
+                            Catálogo
+                        </span>
+                        <p style={{ margin: 0, fontSize: '0.92rem', fontWeight: 700, color: '#0f172a' }}>
+                            Producto Prueba
+                        </p>
+                        <p style={{ margin: '0.15rem 0 0', fontSize: '0.75rem', color: '#64748b' }}>
+                            Stock: 50
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem', flexShrink: 0 }}>
+                        <span style={{ fontSize: '0.98rem', fontWeight: 800, color: '#2563eb', fontVariantNumeric: 'tabular-nums' }}>
+                            $10.00
+                        </span>
+                        <div style={{
+                            width: '30px',
+                            height: '30px',
+                            borderRadius: '0.55rem',
+                            backgroundColor: '#eff6ff',
+                            color: '#2563eb',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <Plus size={16} />
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* Bottom Actions */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #f1f5f9', paddingTop: '1.5rem' }}>
-                <button 
+            {/* Botones inferiores */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1.6fr',
+                gap: '0.75rem',
+                marginTop: '0.25rem'
+            }}>
+                <button
+                    type="button"
+                    onClick={handleCancel}
+                    style={{
+                        padding: '0.85rem 1rem',
+                        backgroundColor: '#f1f5f9',
+                        color: '#475569',
+                        border: 'none',
+                        borderRadius: '0.875rem',
+                        fontWeight: 700,
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                    }}
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="button"
                     onClick={handleSave}
                     style={{
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        padding: '0.75rem 1.75rem', backgroundColor: '#2563eb', color: 'white',
-                        border: 'none', borderRadius: '0.5rem', fontWeight: 600, cursor: 'pointer',
-                        fontSize: '1rem', transition: 'all 0.2s',
-                        boxShadow: '0 4px 6px -1px rgba(37,99,235,0.2)'
+                        padding: '0.85rem 1rem',
+                        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '0.875rem',
+                        fontWeight: 700,
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.45rem',
+                        whiteSpace: 'nowrap',
+                        boxShadow: '0 6px 16px -4px rgba(37, 99, 235, 0.4)'
                     }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = '#2563eb'}
                 >
-                    <Save size={20} />
+                    <Save size={18} />
                     Guardar Cambios
                 </button>
             </div>
 
-            {/* ════════ MODERN IMAGE UPLOADER MODAL ════════ */}
+            {/* Modal para subir imagen */}
             {isUploadModalOpen && (
-                <div style={overlayStyle}>
-                    <div style={modalWrapperStyle}>
+                <div style={overlayStyle} onClick={() => { setIsUploadModalOpen(false); setTempImage(''); }}>
+                    <div style={modalWrapperStyle} onClick={e => e.stopPropagation()}>
                         <div style={modalStyle}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
                                     Subir Imagen de Producto
                                 </h3>
-                                <button 
+                                <button
+                                    type="button"
                                     onClick={() => {
                                         setIsUploadModalOpen(false);
                                         setTempImage('');
-                                    }} 
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+                                    }}
+                                    style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        backgroundColor: '#f1f5f9',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
                                 >
-                                    <X size={20} color="#64748b" />
+                                    <X size={18} color="#64748b" />
                                 </button>
                             </div>
-                            
-                            {/* Drag & Drop Area */}
-                            <div 
+
+                            <div
                                 onDragOver={handleDragOver}
                                 onDragLeave={handleDragLeave}
                                 onDrop={handleDrop}
                                 onClick={triggerFileInput}
                                 style={{
                                     border: `2px dashed ${dragOver ? '#2563eb' : '#cbd5e1'}`,
-                                    borderRadius: '0.75rem',
-                                    padding: '2.5rem 1.5rem',
+                                    borderRadius: '1rem',
+                                    padding: '2rem 1.25rem',
                                     textAlign: 'center',
                                     backgroundColor: dragOver ? '#eff6ff' : '#f8fafc',
                                     cursor: 'pointer',
@@ -428,101 +741,100 @@ const Customization = () => {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
-                                    gap: '0.75rem',
-                                    boxShadow: dragOver ? '0 0 12px rgba(37,99,235,0.1)' : 'none'
+                                    gap: '0.65rem'
                                 }}
                             >
-                                <input 
-                                    type="file" 
-                                    ref={fileInputRef} 
-                                    onChange={handleFileChange} 
-                                    accept="image/*" 
-                                    style={{ display: 'none' }} 
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    accept="image/*"
+                                    style={{ display: 'none' }}
                                 />
                                 <div style={{
-                                    width: '52px',
-                                    height: '52px',
+                                    width: '48px',
+                                    height: '48px',
                                     borderRadius: '50%',
                                     backgroundColor: '#eff6ff',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    color: '#2563eb',
-                                    marginBottom: '0.25rem'
+                                    color: '#2563eb'
                                 }}>
-                                    <Upload size={24} />
+                                    <Upload size={22} />
                                 </div>
                                 <div>
-                                    <p style={{ margin: '0 0 0.25rem 0', fontWeight: 700, color: '#334155', fontSize: '0.95rem' }}>
+                                    <p style={{ margin: '0 0 0.2rem 0', fontWeight: 700, color: '#334155', fontSize: '0.92rem' }}>
                                         Arrastra tu archivo aquí
                                     </p>
                                     <p style={{ margin: 0, color: '#64748b', fontSize: '0.8rem' }}>
                                         o haz clic para explorar en tu equipo
                                     </p>
                                 </div>
-                                <span style={{ fontSize: '0.725rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                                <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
                                     PNG, JPG, JPEG o WEBP (Máx. 2MB)
                                 </span>
                             </div>
 
-                            {/* Temporary Preview inside Modal */}
                             {tempImage && (
-                                <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #e2e8f0', animation: 'fadeIn 0.2s ease-out' }}>
-                                    <p style={{ fontSize: '0.825rem', fontWeight: 600, color: '#475569', marginBottom: '0.75rem', marginTop: 0 }}>
+                                <div style={{
+                                    marginTop: '1.25rem',
+                                    padding: '1rem',
+                                    backgroundColor: '#f8fafc',
+                                    borderRadius: '0.85rem',
+                                    border: '1px solid #e2e8f0'
+                                }}>
+                                    <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', margin: '0 0 0.75rem' }}>
                                         Vista Previa Seleccionada:
                                     </p>
-                                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                                        <div style={{ 
-                                            width: '120px', 
-                                            height: '120px', 
-                                            borderRadius: '0.75rem', 
-                                            overflow: 'hidden', 
-                                            border: '3px solid white', 
-                                            boxShadow: '0 4px 10px rgba(0,0,0,0.1)' 
+                                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                                        <div style={{
+                                            width: '112px',
+                                            height: '112px',
+                                            borderRadius: '0.85rem',
+                                            overflow: 'hidden',
+                                            border: '3px solid white',
+                                            boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
                                         }}>
                                             <img src={tempImage} alt="Selection preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                    <div style={{ display: 'flex', gap: '0.65rem' }}>
                                         <button
+                                            type="button"
                                             onClick={handleConfirmImage}
                                             style={{
                                                 flex: 1,
-                                                padding: '0.625rem',
+                                                padding: '0.65rem',
                                                 backgroundColor: '#16a34a',
                                                 color: 'white',
                                                 border: 'none',
-                                                borderRadius: '0.5rem',
-                                                fontWeight: 600,
+                                                borderRadius: '0.65rem',
+                                                fontWeight: 700,
                                                 cursor: 'pointer',
                                                 fontSize: '0.85rem',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                gap: '0.375rem',
-                                                transition: 'all 0.15s'
+                                                gap: '0.35rem'
                                             }}
-                                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#15803d'}
-                                            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#16a34a'}
                                         >
                                             <Check size={16} />
                                             Confirmar Imagen
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={() => setTempImage('')}
                                             style={{
-                                                padding: '0.625rem 1rem',
+                                                padding: '0.65rem 1rem',
                                                 backgroundColor: '#f1f5f9',
                                                 color: '#64748b',
                                                 border: 'none',
-                                                borderRadius: '0.5rem',
-                                                fontWeight: 600,
+                                                borderRadius: '0.65rem',
+                                                fontWeight: 700,
                                                 cursor: 'pointer',
-                                                fontSize: '0.85rem',
-                                                transition: 'all 0.15s'
+                                                fontSize: '0.85rem'
                                             }}
-                                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
-                                            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
                                         >
                                             Descartar
                                         </button>
@@ -534,7 +846,6 @@ const Customization = () => {
                 </div>
             )}
 
-            {/* Fade In Animation */}
             <style>{`
                 @keyframes fadeIn {
                     from { opacity: 0; transform: translateY(6px); }
@@ -545,13 +856,9 @@ const Customization = () => {
     );
 };
 
-// Styling Constants (Matching Premium Checkout Modals)
 const overlayStyle = {
     position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    inset: 0,
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
     backdropFilter: 'blur(4px)',
     display: 'flex',
@@ -573,11 +880,10 @@ const modalWrapperStyle = {
 };
 
 const modalStyle = {
-    padding: '2rem',
+    padding: '1.5rem',
     width: '100%',
-    maxHeight: '90vh',
+    maxHeight: '90dvh',
     overflowY: 'auto'
 };
 
 export default Customization;
-
