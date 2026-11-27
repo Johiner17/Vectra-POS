@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
     ShoppingCart, Package, Tag, Coffee, Box, Star,
     Save, Palette, Upload, Image as ImageIcon, X, Check, Trash2,
-    ChevronLeft, Eye, Plus
+    Eye, Plus
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -29,7 +28,6 @@ const colors = [
 
 const Customization = () => {
     const isMobile = useIsMobile();
-    const navigate = useNavigate();
 
     const [selectedIcon, setSelectedIcon] = useState('ShoppingCart');
     const [selectedColor, setSelectedColor] = useState(colors[0]);
@@ -138,35 +136,12 @@ const Customization = () => {
             paddingBottom: isMobile ? '1rem' : '2rem'
         }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                <button
-                    type="button"
-                    onClick={() => navigate(-1)}
-                    aria-label="Volver"
-                    style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '50%',
-                        backgroundColor: 'white',
-                        border: '1px solid #e2e8f0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        color: '#334155',
-                        flexShrink: 0,
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
-                    }}
-                >
-                    <ChevronLeft size={20} />
-                </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Palette size={26} color="#2563eb" />
                 <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                        <Palette size={20} color="#2563eb" />
-                        <h1 className="page-title" style={{ fontSize: isMobile ? '1.3rem' : '1.5rem', margin: 0 }}>
-                            Personalización POS
-                        </h1>
-                    </div>
+                    <h1 className="page-title" style={{ fontSize: isMobile ? '1.3rem' : '1.5rem', margin: 0 }}>
+                        Personalización POS
+                    </h1>
                     <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0.15rem 0 0' }}>
                         Estilo visual por defecto para productos sin foto propia
                     </p>
