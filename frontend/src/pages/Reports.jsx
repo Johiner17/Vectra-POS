@@ -98,7 +98,23 @@ const Reports = () => {
     const paymentPieData = getPaymentPieData();
 
     // Render stock status badge
-    const renderStockBadge = (stock, min) => {
+    const renderStockBadge = (stock, min, sinControlStock = false) => {
+        if (sinControlStock) {
+            return (
+                <span style={{
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    backgroundColor: '#eff6ff',
+                    color: '#2563eb',
+                    whiteSpace: 'nowrap'
+                }}>
+                    Ilimitado
+                </span>
+            );
+        }
+
         let bgColor = '#f0fdf4';
         let textColor = '#16a34a';
         let text = `${stock} uds`;
@@ -120,7 +136,8 @@ const Reports = () => {
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 backgroundColor: bgColor,
-                color: textColor
+                color: textColor,
+                whiteSpace: 'nowrap'
             }}>
                 {text}
             </span>
@@ -525,7 +542,7 @@ const Reports = () => {
                                                 ${prod.total_usd.toFixed(2)}
                                             </td>
                                             <td style={{ padding: '1rem', fontSize: '0.85rem' }}>
-                                                {renderStockBadge(prod.stock_actual, 5)}
+                                                {renderStockBadge(prod.stock_actual, 5, prod.sin_control_stock)}
                                             </td>
                                         </tr>
                                     ))
@@ -559,7 +576,7 @@ const Reports = () => {
                                                 ${prod.total_usd.toFixed(2)}
                                             </td>
                                             <td style={{ padding: '1rem', fontSize: '0.85rem' }}>
-                                                {renderStockBadge(prod.stock_actual, 5)}
+                                                {renderStockBadge(prod.stock_actual, 5, prod.sin_control_stock)}
                                             </td>
                                         </tr>
                                     ))
