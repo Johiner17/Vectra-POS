@@ -320,10 +320,11 @@ const Sales = () => {
                                 { label: 'Total USD', hideMobile: false },
                                 { label: 'Total Bs.', hideMobile: true },
                                 { label: 'Método', hideMobile: true },
-                                { label: '', hideMobile: false },
+                                { label: '', hideMobile: true },
                             ].map((h, idx) => (
                                 <th key={idx} className={h.hideMobile ? 'hide-mobile' : ''} style={{
-                                    textAlign: 'left', padding: '0.875rem 1rem',
+                                    textAlign: isMobile && h.label === 'Total USD' ? 'right' : 'left',
+                                    padding: isMobile ? '0.75rem 0.65rem' : '0.875rem 1rem',
                                     fontSize: '0.75rem', fontWeight: 600, color: '#64748b',
                                     borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap'
                                 }}>
@@ -336,8 +337,8 @@ const Sales = () => {
                         {loading ? (
                             Array.from({ length: 6 }).map((_, i) => (
                                 <tr key={i}>
-                                    {Array.from({ length: 8 }).map((_, j) => (
-                                        <td key={j} style={{ padding: '0.875rem 1rem' }}>
+                                    {[false, false, true, true, false, true, true, true].map((hideMob, j) => (
+                                        <td key={j} className={hideMob ? 'hide-mobile' : ''} style={{ padding: isMobile ? '0.75rem 0.65rem' : '0.875rem 1rem' }}>
                                             <div style={{ height: '14px', backgroundColor: '#f1f5f9', borderRadius: '0.25rem' }} />
                                         </td>
                                     ))}
@@ -352,18 +353,19 @@ const Sales = () => {
                         ) : paginatedSales.map(sale => (
                             <tr
                                 key={sale.id}
+                                onClick={() => !detailLoading && openDetail(sale.id)}
                                 style={{ borderBottom: '1px solid #f8fafc', cursor: 'pointer', transition: 'background 0.1s' }}
                                 onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fafbfc'}
                                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                             >
-                                <td style={{ padding: '0.875rem 1rem' }}>
-                                    <span style={{ fontWeight: 600, color: '#2563eb', fontSize: '0.875rem' }}>
+                                <td style={{ padding: isMobile ? '0.8rem 0.65rem' : '0.875rem 1rem', whiteSpace: 'nowrap' }}>
+                                    <span style={{ fontWeight: 600, color: '#2563eb', fontSize: '0.85rem' }}>
                                         #{sale.numero_factura}
                                     </span>
                                 </td>
-                                <td style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', color: '#374151', whiteSpace: 'nowrap' }}>
+                                <td style={{ padding: isMobile ? '0.8rem 0.5rem' : '0.875rem 1rem', fontSize: isMobile ? '0.76rem' : '0.8rem', color: '#374151', whiteSpace: 'nowrap' }}>
                                     {new Date(sale.fecha_venta).toLocaleString('es-VE', {
-                                        day: '2-digit', month: '2-digit', year: 'numeric',
+                                        day: '2-digit', month: '2-digit', year: isMobile ? '2-digit' : 'numeric',
                                         hour: '2-digit', minute: '2-digit'
                                     })}
                                 </td>
@@ -373,7 +375,11 @@ const Sales = () => {
                                 <td className="hide-mobile" style={{ padding: '0.875rem 1rem', fontSize: '0.85rem', color: '#64748b', textAlign: 'center' }}>
                                     {sale.items_count || '—'}
                                 </td>
-                                <td style={{ padding: '0.875rem 1rem', fontWeight: 700, color: '#1e293b', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
+                                <td style={{
+                                    padding: isMobile ? '0.8rem 0.65rem' : '0.875rem 1rem',
+                                    fontWeight: 700, color: '#1e293b', fontSize: '0.88rem', whiteSpace: 'nowrap',
+                                    textAlign: isMobile ? 'right' : 'left'
+                                }}>
                                     ${(sale.total_usd_centavos / 100).toFixed(2)}
                                 </td>
                                 <td className="hide-mobile" style={{ padding: '0.875rem 1rem', fontSize: '0.85rem', color: '#64748b', whiteSpace: 'nowrap' }}>
@@ -388,9 +394,9 @@ const Sales = () => {
                                         {sale.moneda_venta}
                                     </span>
                                 </td>
-                                <td style={{ padding: '0.875rem 1rem' }}>
+                                <td className="hide-mobile" style={{ padding: '0.875rem 1rem' }}>
                                     <button
-                                        onClick={() => openDetail(sale.id)}
+                                        onClick={e => { e.stopPropagation(); openDetail(sale.id); }}
                                         disabled={detailLoading}
                                         style={{
                                             display: 'flex', alignItems: 'center', gap: '0.375rem',
