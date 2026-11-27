@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign, CreditCard, Banknote, Check, Plus, Trash2, Layers } from 'lucide-react';
+import { X, DollarSign, CreditCard, Banknote, Check, Plus, Trash2, Layers, ArrowDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { saleRepository } from '../services/saleRepository';
 import { formatBs } from '../utils/formatters';
@@ -410,138 +410,423 @@ const CheckoutModal = ({ isOpen, onClose, cart, totalUsd, tasaBcv, onSuccess }) 
                     )}
 
                     {/* ════════ MIXTO UI ════════ */}
-                    {isMixto && (
-                        <div style={{ marginBottom: '1rem' }}>
-                            {/* Remaining balance banner */}
-                            <div style={{
-                                padding: '0.75rem 1rem', borderRadius: '0.75rem', marginBottom: '1rem',
-                                backgroundColor: mixtoCubierto ? '#f0fdf4' : '#fffbeb',
-                                border: `1px solid ${mixtoCubierto ? '#bbf7d0' : '#fde68a'}`,
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                            }}>
-                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: mixtoCubierto ? '#16a34a' : '#92400e' }}>
-                                    {mixtoCubierto ? '✅ Total cubierto' : 'Restante por cubrir:'}
-                                </span>
-                                {!mixtoCubierto && (
-                                    <div style={{ textAlign: 'right' }}>
-                                        <span style={{ fontWeight: 700, fontSize: '1rem', color: '#92400e' }}>
-                                            $ {mixtoRestanteUsd.toFixed(2)}
+                    {isMixto && (() => {
+                        const explicitPaidUsd = getMixtoTotalPaidUsd(mixtoPayments);
+                        const firstBlankIdx = mixtoPayments.findIndex(p => !p.monto || parseFloat(p.monto) <= 0);
+                        const hasExplicit = mixtoPayments.some(p => p.monto && parseFloat(p.monto) > 0);
+                        const coveragePct = totalUsd > 0 ? Math.min(100, Math.round((mixtoTotalPaidUsd / totalUsd) * 100)) : 0;
+                        const excedenteUsd = Math.max(0, mixtoTotalPaidUsd - totalUsd);
+                        const segColors = ['#2563eb', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899'];
+
+                        return (
+                            <div style={{ marginBottom: '1.15rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                                {/* Tarjeta de Cobertura de la Cuenta */}
+                                <div style={{
+                                    padding: '0.85rem 1rem',
+                                    borderRadius: '0.85rem',
+                                    backgroundColor: '#f8fafc',
+                                    border: '1px solid #e2e8f0'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', fontWeight: 700, color: '#334155' }}>
+                                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: mixtoCubierto ? '#10b981' : '#f59e0b' }} />
+                                            Cobertura de la cuenta
                                         </span>
-                                        <span style={{ fontSize: '0.8rem', color: '#b45309', marginLeft: '0.5rem' }}>
-                                            / Bs. {formatBs(mixtoRestanteUsd * tasaBcv)}
+                                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: mixtoCubierto ? '#059669' : '#d97706' }}>
+                                            {coveragePct}% Cubierto
                                         </span>
                                     </div>
-                                )}
-                            </div>
 
-                            {/* Payment rows */}
-                            <div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '260px', overflowY: 'auto', paddingRight: '0.25rem' }}>
-                                {mixtoPayments.map((payment, idx) => {
-                                    const pm = MIXTO_AVAILABLE_METHODS.find(x => x.id === payment.methodId);
-                                    const remaining = getMixtoRemainingForRow(idx);
-                                    return (
-                                        <div key={idx} style={{
-                                            padding: '0.875rem', borderRadius: '0.75rem',
-                                            backgroundColor: '#f8fafc', border: '1px solid #e2e8f0',
-                                            position: 'relative'
-                                        }}>
-                                            {/* Remove button */}
-                                            {mixtoPayments.length > 2 && (
-                                                <button
-                                                    onClick={() => removeMixtoPayment(idx)}
+                                    {/* Barra segmentada */}
+                                    <div style={{
+                                        height: '10px',
+                                        borderRadius: '999px',
+                                        backgroundColor: '#e2e8f0',
+                                        overflow: 'hidden',
+                                        display: 'flex',
+                                        marginBottom: '0.55rem'
+                                    }}>
+                                        {effectivePayments.map((ep, idx) => {
+                                            const m = MIXTO_AVAILABLE_METHODS.find(x => x.id === ep.methodId);
+                                            const val = parseFloat(ep.monto) || 0;
+                                            const usdVal = m && val > 0 ? (m.moneda === 'BS' ? val / tasaBcv : val) : 0;
+                                            const pct = totalUsd > 0 ? Math.min(100, (usdVal / totalUsd) * 100) : 0;
+                                            if (pct <= 0) return null;
+                                            return (
+                                                <div
+                                                    key={idx}
                                                     style={{
-                                                        position: 'absolute', top: '0.5rem', right: '0.5rem',
-                                                        background: 'none', border: 'none', cursor: 'pointer', padding: '2px'
-                                                    }}
-                                                    title="Eliminar"
-                                                >
-                                                    <Trash2 size={14} color="#ef4444" />
-                                                </button>
-                                            )}
-
-                                            {/* Method selector */}
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: '0.375rem' }}>
-                                                Método {idx + 1}
-                                            </label>
-                                            <select
-                                                value={payment.methodId}
-                                                onChange={e => updateMixtoPayment(idx, 'methodId', e.target.value)}
-                                                style={{
-                                                    width: '100%', padding: '0.5rem', borderRadius: '0.375rem',
-                                                    border: '1px solid #d1d5db', fontSize: '0.85rem',
-                                                    marginBottom: '0.5rem', backgroundColor: 'white', outline: 'none'
-                                                }}
-                                            >
-                                                {MIXTO_AVAILABLE_METHODS.map(m => (
-                                                    <option key={m.id} value={m.id}>{m.label} ({m.moneda})</option>
-                                                ))}
-                                            </select>
-
-                                            {/* Amount input */}
-                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    value={payment.monto}
-                                                    onChange={e => updateMixtoPayment(idx, 'monto', e.target.value)}
-                                                    placeholder={remaining > 0 ? remaining.toFixed(2) : '0.00'}
-                                                    style={{
-                                                        flex: 1, padding: '0.5rem', borderRadius: '0.375rem',
-                                                        border: '1px solid #d1d5db', fontSize: '0.95rem',
-                                                        textAlign: 'right', outline: 'none', backgroundColor: 'white'
+                                                        width: `${pct}%`,
+                                                        backgroundColor: segColors[idx % segColors.length],
+                                                        transition: 'width 0.2s ease'
                                                     }}
                                                 />
-                                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', minWidth: '32px' }}>
-                                                    {pm?.moneda === 'BS' ? 'Bs.' : 'USD'}
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Leyenda de métodos */}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.65rem', fontSize: '0.72rem', color: '#475569', fontWeight: 600 }}>
+                                        {effectivePayments.map((ep, idx) => {
+                                            const m = MIXTO_AVAILABLE_METHODS.find(x => x.id === ep.methodId);
+                                            const val = parseFloat(ep.monto) || 0;
+                                            const formatted = m?.moneda === 'BS' ? `Bs. ${formatBs(val)}` : `$ ${val.toFixed(2)}`;
+                                            return (
+                                                <span key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                                    <span style={{ width: '7px', height: '7px', borderRadius: '2px', backgroundColor: segColors[idx % segColors.length] }} />
+                                                    Método {idx + 1}: <strong style={{ color: '#0f172a' }}>{formatted}</strong>
                                                 </span>
-                                            </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
 
-                                            {/* Remaining hint */}
-                                            {remaining > 0 && !payment.monto && (
-                                                <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.25rem', textAlign: 'right' }}>
-                                                    Sugerido: {pm?.moneda === 'BS' ? `Bs. ${formatBs(remaining)}` : `$ ${remaining.toFixed(2)}`}
-                                                </p>
-                                            )}
+                                {/* Tarjetas de Pago */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    {mixtoPayments.map((payment, idx) => {
+                                        const pm = MIXTO_AVAILABLE_METHODS.find(x => x.id === payment.methodId);
+                                        const isBsMethod = pm?.moneda === 'BS';
+                                        const explicitVal = parseFloat(payment.monto) || 0;
+                                        const isAutoFilled = idx === firstBlankIdx && mixtoRestanteUsd > 0 && hasExplicit;
+                                        const effectiveVal = parseFloat(effectivePayments[idx]?.monto) || 0;
+                                        const remaining = getMixtoRemainingForRow(idx);
+                                        const eqOtherCurrency = isBsMethod
+                                            ? `$ ${(effectiveVal / tasaBcv).toFixed(2)} USD`
+                                            : `Bs. ${formatBs(effectiveVal * tasaBcv)}`;
 
-                                            {/* Reference for transfers */}
-                                            {payment.methodId.includes('transferencia') && (
-                                                <input
-                                                    type="text"
-                                                    value={payment.referencia}
-                                                    onChange={e => updateMixtoPayment(idx, 'referencia', e.target.value)}
-                                                    placeholder="Referencia (opcional)"
-                                                    style={{
-                                                        width: '100%', padding: '0.4rem', borderRadius: '0.375rem',
-                                                        border: '1px solid #d1d5db', fontSize: '0.8rem',
-                                                        marginTop: '0.5rem', outline: 'none'
-                                                    }}
-                                                />
-                                            )}
+                                        const badgeColor = isAutoFilled ? '#10b981' : segColors[idx % segColors.length];
+                                        const cardTitle = idx === 0
+                                            ? 'Primer Pago'
+                                            : idx === 1
+                                                ? (isAutoFilled ? 'Segundo Pago (Saldo Restante)' : 'Segundo Pago')
+                                                : `Pago ${idx + 1}`;
+
+                                        const applyQuickPct = (pct) => {
+                                            const targetUsd = totalUsd * pct;
+                                            const val = isBsMethod ? targetUsd * tasaBcv : targetUsd;
+                                            updateMixtoPayment(idx, 'monto', val.toFixed(2));
+                                        };
+
+                                        return (
+                                            <React.Fragment key={idx}>
+                                                <div style={{
+                                                    padding: '0.95rem',
+                                                    borderRadius: '0.9rem',
+                                                    backgroundColor: 'white',
+                                                    border: isAutoFilled ? '1.5px solid #10b981' : '1.5px solid #e2e8f0',
+                                                    boxShadow: isAutoFilled ? '0 4px 14px rgba(16, 185, 129, 0.08)' : '0 1px 3px rgba(15, 23, 42, 0.03)',
+                                                    position: 'relative'
+                                                }}>
+                                                    {/* Encabezado de tarjeta */}
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                                                            <span style={{
+                                                                width: '22px', height: '22px', borderRadius: '50%',
+                                                                backgroundColor: isAutoFilled ? '#10b981' : `${badgeColor}18`,
+                                                                color: isAutoFilled ? 'white' : badgeColor,
+                                                                fontSize: '0.75rem', fontWeight: 800,
+                                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                                flexShrink: 0
+                                                            }}>
+                                                                {idx + 1}
+                                                            </span>
+                                                            <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>
+                                                                {cardTitle}
+                                                            </span>
+                                                        </div>
+
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                                                            {isAutoFilled ? (
+                                                                <span style={{
+                                                                    fontSize: '0.68rem', fontWeight: 700,
+                                                                    backgroundColor: '#dcfce7', color: '#15803d',
+                                                                    padding: '0.2rem 0.55rem', borderRadius: '999px',
+                                                                    whiteSpace: 'nowrap'
+                                                                }}>
+                                                                    ✓ Auto-completado
+                                                                </span>
+                                                            ) : effectiveVal > 0 ? (
+                                                                <span style={{
+                                                                    fontSize: '0.7rem', fontWeight: 700,
+                                                                    backgroundColor: '#eff6ff', color: '#2563eb',
+                                                                    padding: '0.2rem 0.55rem', borderRadius: '999px',
+                                                                    whiteSpace: 'nowrap'
+                                                                }}>
+                                                                    ≈ {eqOtherCurrency}
+                                                                </span>
+                                                            ) : null}
+
+                                                            {mixtoPayments.length > 2 && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => removeMixtoPayment(idx)}
+                                                                    style={{
+                                                                        background: '#fef2f2', border: 'none', borderRadius: '0.4rem',
+                                                                        cursor: 'pointer', padding: '0.28rem', display: 'flex', alignItems: 'center'
+                                                                    }}
+                                                                    title="Eliminar método"
+                                                                >
+                                                                    <Trash2 size={14} color="#ef4444" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Selector de método */}
+                                                    <select
+                                                        value={payment.methodId}
+                                                        onChange={e => updateMixtoPayment(idx, 'methodId', e.target.value)}
+                                                        style={{
+                                                            width: '100%', padding: '0.58rem 0.75rem', borderRadius: '0.6rem',
+                                                            border: '1.5px solid #e2e8f0', fontSize: '0.86rem', fontWeight: 600,
+                                                            color: '#1e293b', marginBottom: '0.6rem', backgroundColor: '#f8fafc', outline: 'none'
+                                                        }}
+                                                    >
+                                                        {MIXTO_AVAILABLE_METHODS.map(m => (
+                                                            <option key={m.id} value={m.id}>{m.label} ({m.moneda})</option>
+                                                        ))}
+                                                    </select>
+
+                                                    {/* Campo de Monto */}
+                                                    <div style={{
+                                                        position: 'relative',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        border: isAutoFilled ? '1.5px solid #10b981' : '1.5px solid #e2e8f0',
+                                                        borderRadius: '0.65rem',
+                                                        backgroundColor: 'white',
+                                                        padding: '0.45rem 0.75rem'
+                                                    }}>
+                                                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: isAutoFilled ? '#059669' : '#64748b', whiteSpace: 'nowrap', marginRight: '0.5rem' }}>
+                                                            {isAutoFilled ? 'Monto restante' : 'Monto'}
+                                                        </span>
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            className={isAutoFilled ? 'mixto-auto-input' : undefined}
+                                                            value={payment.monto}
+                                                            onChange={e => updateMixtoPayment(idx, 'monto', e.target.value)}
+                                                            placeholder={isAutoFilled ? effectiveVal.toFixed(2) : (remaining > 0 ? remaining.toFixed(2) : '0.00')}
+                                                            style={{
+                                                                flex: 1,
+                                                                minWidth: 0,
+                                                                border: 'none',
+                                                                outline: 'none',
+                                                                textAlign: 'right',
+                                                                fontSize: '1.1rem',
+                                                                fontWeight: 800,
+                                                                color: '#0f172a',
+                                                                backgroundColor: 'transparent',
+                                                                fontVariantNumeric: 'tabular-nums'
+                                                            }}
+                                                        />
+                                                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#64748b', marginLeft: '0.4rem', flexShrink: 0 }}>
+                                                            {isBsMethod ? 'Bs.' : 'USD'}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Chips de ajuste rápido para Primer Pago */}
+                                                    {idx === 0 && (
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.55rem', flexWrap: 'wrap' }}>
+                                                            <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600 }}>Ajuste rápido:</span>
+                                                            {[
+                                                                { label: '25%', pct: 0.25 },
+                                                                { label: '50%', pct: 0.5 },
+                                                                { label: '75%', pct: 0.75 },
+                                                            ].map(chip => (
+                                                                <button
+                                                                    key={chip.label}
+                                                                    type="button"
+                                                                    onClick={() => applyQuickPct(chip.pct)}
+                                                                    style={{
+                                                                        padding: '0.2rem 0.55rem',
+                                                                        borderRadius: '0.4rem',
+                                                                        border: '1px solid #e2e8f0',
+                                                                        backgroundColor: '#f8fafc',
+                                                                        color: '#334155',
+                                                                        fontSize: '0.72rem',
+                                                                        fontWeight: 700,
+                                                                        cursor: 'pointer'
+                                                                    }}
+                                                                >
+                                                                    {chip.label}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Nota informativa debajo del Segundo Pago auto-completado */}
+                                                    {isAutoFilled && (
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', fontSize: '0.74rem' }}>
+                                                            <span style={{ color: '#059669', fontWeight: 600 }}>
+                                                                ● Calculado para cubrir el 100%
+                                                            </span>
+                                                            <span style={{ color: '#64748b', fontWeight: 600 }}>
+                                                                ≈ {eqOtherCurrency}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Referencia para transferencias */}
+                                                    {payment.methodId.includes('transferencia') && (
+                                                        <input
+                                                            type="text"
+                                                            value={payment.referencia}
+                                                            onChange={e => updateMixtoPayment(idx, 'referencia', e.target.value)}
+                                                            placeholder="Referencia (opcional)"
+                                                            style={{
+                                                                width: '100%', padding: '0.45rem 0.65rem', borderRadius: '0.5rem',
+                                                                border: '1px solid #e2e8f0', fontSize: '0.8rem',
+                                                                marginTop: '0.55rem', outline: 'none', backgroundColor: '#f8fafc'
+                                                            }}
+                                                        />
+                                                    )}
+                                                </div>
+
+                                                {/* Banner "Resta por cubrir" justo después del Primer Pago */}
+                                                {idx === 0 && explicitPaidUsd > 0 && mixtoRestanteUsd > 0.009 && (() => {
+                                                    const nextMethod = MIXTO_AVAILABLE_METHODS.find(x => x.id === mixtoPayments[1]?.methodId);
+                                                    const nextIsBs = nextMethod?.moneda === 'BS';
+                                                    const restMain = nextIsBs
+                                                        ? `Bs. ${formatBs(mixtoRestanteUsd * tasaBcv)}`
+                                                        : `$ ${mixtoRestanteUsd.toFixed(2)}`;
+                                                    const restEq = nextIsBs
+                                                        ? `$ ${mixtoRestanteUsd.toFixed(2)} USD`
+                                                        : `Bs. ${formatBs(mixtoRestanteUsd * tasaBcv)}`;
+                                                    const nextHasExplicit = Boolean(mixtoPayments[1]?.monto && parseFloat(mixtoPayments[1].monto) > 0);
+
+                                                    return (
+                                                        <div style={{
+                                                            padding: '0.65rem 0.85rem',
+                                                            borderRadius: '0.8rem',
+                                                            backgroundColor: '#fffbeb',
+                                                            border: '1px solid #fde68a',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            gap: '0.6rem'
+                                                        }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0 }}>
+                                                                <span style={{
+                                                                    width: '24px', height: '24px', borderRadius: '50%',
+                                                                    backgroundColor: '#f59e0b', color: 'white',
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                    flexShrink: 0
+                                                                }}>
+                                                                    <ArrowDown size={14} strokeWidth={2.5} />
+                                                                </span>
+                                                                <div style={{ minWidth: 0 }}>
+                                                                    <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, color: '#92400e' }}>
+                                                                        Resta por cubrir: {restMain}
+                                                                    </p>
+                                                                    <p style={{ margin: 0, fontSize: '0.7rem', color: '#b45309', fontWeight: 500 }}>
+                                                                        Equivalente a {restEq}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            {!nextHasExplicit ? (
+                                                                <span style={{
+                                                                    padding: '0.28rem 0.6rem',
+                                                                    borderRadius: '999px',
+                                                                    backgroundColor: '#f59e0b',
+                                                                    color: 'white',
+                                                                    fontSize: '0.7rem',
+                                                                    fontWeight: 700,
+                                                                    whiteSpace: 'nowrap',
+                                                                    flexShrink: 0
+                                                                }}>
+                                                                    Auto-asignado ✓
+                                                                </span>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const val = nextIsBs ? mixtoRestanteUsd * tasaBcv : mixtoRestanteUsd;
+                                                                        updateMixtoPayment(1, 'monto', val.toFixed(2));
+                                                                    }}
+                                                                    style={{
+                                                                        padding: '0.28rem 0.6rem',
+                                                                        borderRadius: '999px',
+                                                                        border: 'none',
+                                                                        backgroundColor: '#f59e0b',
+                                                                        color: 'white',
+                                                                        fontSize: '0.7rem',
+                                                                        fontWeight: 700,
+                                                                        cursor: 'pointer',
+                                                                        whiteSpace: 'nowrap',
+                                                                        flexShrink: 0
+                                                                    }}
+                                                                >
+                                                                    Completar
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Agregar otro método */}
+                                {mixtoPayments.length < 5 && (
+                                    <button
+                                        type="button"
+                                        onClick={addMixtoPayment}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                                            width: '100%', padding: '0.68rem',
+                                            border: '1.5px dashed #cbd5e1', borderRadius: '0.75rem',
+                                            backgroundColor: '#f8fafc', cursor: 'pointer',
+                                            fontSize: '0.82rem', fontWeight: 700, color: '#475569',
+                                            transition: 'all 0.15s'
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.color = '#2563eb'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.color = '#475569'; }}
+                                    >
+                                        <Plus size={15} /> Agregar otro método ({mixtoPayments.length + 1}er pago)
+                                    </button>
+                                )}
+
+                                {/* Resumen de cobertura total */}
+                                <div style={{
+                                    padding: '0.75rem 0.95rem',
+                                    borderRadius: '0.8rem',
+                                    backgroundColor: mixtoCubierto ? '#ecfdf5' : '#fef2f2',
+                                    border: `1px solid ${mixtoCubierto ? '#bbf7d0' : '#fecaca'}`,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: '0.6rem'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                                        <span style={{
+                                            width: '24px', height: '24px', borderRadius: '50%',
+                                            backgroundColor: mixtoCubierto ? '#10b981' : '#ef4444',
+                                            color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                                        }}>
+                                            {mixtoCubierto ? <Check size={14} strokeWidth={3} /> : '!'}
+                                        </span>
+                                        <div>
+                                            <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, color: mixtoCubierto ? '#065f46' : '#991b1b' }}>
+                                                {mixtoCubierto
+                                                    ? (excedenteUsd > 0.01 ? 'Total cubierto (con vuelto)' : 'Total cubierto con exactitud')
+                                                    : 'Falta cubrir el total de la venta'}
+                                            </p>
+                                            <p style={{ margin: 0, fontSize: '0.72rem', color: mixtoCubierto ? '#047857' : '#b91c1c' }}>
+                                                ${mixtoTotalPaidUsd.toFixed(2)} de ${totalUsd.toFixed(2)} (Bs. {formatBs(totalBs)})
+                                            </p>
                                         </div>
-                                    );
-                                })}
+                                    </div>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: mixtoCubierto ? '#059669' : '#dc2626', whiteSpace: 'nowrap' }}>
+                                        {mixtoCubierto
+                                            ? (excedenteUsd > 0.01 ? `+$${excedenteUsd.toFixed(2)}` : 'Diferencia: 0,00')
+                                            : `Falta $${mixtoRestanteUsd.toFixed(2)}`}
+                                    </span>
+                                </div>
                             </div>
-
-                            {/* Add payment button */}
-                            {mixtoPayments.length < 5 && (
-                                <button
-                                    onClick={addMixtoPayment}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem',
-                                        width: '100%', padding: '0.6rem', marginTop: '0.75rem',
-                                        border: '2px dashed #d1d5db', borderRadius: '0.5rem',
-                                        backgroundColor: 'transparent', cursor: 'pointer',
-                                        fontSize: '0.82rem', fontWeight: 500, color: '#64748b',
-                                        transition: 'all 0.15s'
-                                    }}
-                                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#f59e0b'; e.currentTarget.style.color = '#f59e0b'; }}
-                                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.color = '#64748b'; }}
-                                >
-                                    <Plus size={14} /> Agregar otro método
-                                </button>
-                            )}
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     {/* Confirm button */}
                     <button
@@ -601,6 +886,10 @@ const rowStyle = {
 };
 
 const scrollbarStyles = `
+    .mixto-auto-input::placeholder {
+        color: #0f172a;
+        opacity: 1;
+    }
     .custom-scrollbar::-webkit-scrollbar {
         width: 6px;
         height: 6px;
